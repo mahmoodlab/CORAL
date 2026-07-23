@@ -1,0 +1,31 @@
+Vendored Eva model code
+========================
+
+This directory (`src/coral/features/_eva/`) contains a vendored copy of the
+Eva inference code:
+
+    Source:   https://github.com/YAndrewL/Eva
+    Files:    eva.py, mae.py, layers.py, masking.py, pos_embed.py, utils.py
+    Commit:   152cb6815da95bcf3373ebd782e7c8e03226feb5
+    License:  Apache License 2.0 (see ./LICENSE)
+    Author:   Yufan Liu and the Eva authors
+
+CORAL vendors this code (rather than depending on the external `Eva` package,
+which is not on PyPI) so that `uv sync --extra eva` is sufficient to run the
+`Eva` feature extractor. See `docs/specs/sprint-17a-eva-vendor.md`.
+
+Modifications from upstream (kept minimal for faithful, bit-identical
+behavior and easy re-sync):
+
+  1. Intra-package imports rewritten `from Eva.X` -> `from coral.features._eva.X`.
+  2. `layers.py` imports its marker->gene map from
+     `coral.markers._eva_marker_to_gene` (CORAL's snapshot of Eva's
+     `utils/constant.py::marker_to_gene`, verified byte-for-byte identical),
+     replacing `from utils.constant import marker_to_gene`.
+  3. `mae.py` loads the GenePT pickle from `conf.ds.genept_pkl` (injected by
+     the extractor from the `assets/Eva/`-resolved path) instead of the
+     hardcoded CWD-relative `marker_embeddings/GenePT_embedding.pkl`.
+
+To re-sync with a newer Eva release, re-copy the files and re-apply the
+three modifications above, then re-run the parity check
+(`scripts/eva_vendor_parity_check.py`).

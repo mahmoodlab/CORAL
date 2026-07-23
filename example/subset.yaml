@@ -1,0 +1,29 @@
+# Example subset for `coral ingest --subset` (and `coral pipeline --subset`).
+#
+# A subset narrows two independent axes at ingest:
+#   channels — glob patterns (case-insensitive) over marker names; seeds
+#              which markers stay in the analysis set (keep_for_analysis).
+#   images   — EXACT entry names (filename with extension, or a per-channel
+#              directory name); selects which images are ingested.
+#
+# A copy of the file you pass is saved to <job_dir>/subset.yaml so a run's
+# selection is always recoverable.
+
+name: example_immune
+description: Keep the immune panel; ingest only the two case-1 slides.
+
+channels:
+  include:
+    - "DAPI"        # nuclear stain — keep one, or the run errors
+    - "CD3"
+    - "CD8"
+    - "CD4"
+    - "CD20"
+    - "PanCK"
+  # exclude: []     # optional; applied after include
+
+images:
+  include:
+    - "A-1.ome.tiff"   # exact name, with extension
+    - "A-2.ome.tiff"
+  # exclude: []         # optional; applied after include

@@ -1,0 +1,155 @@
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# ---------------------------------------------------------------------------
+# Testing / coverage / type-checkers
+# ---------------------------------------------------------------------------
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.pyright_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# ---------------------------------------------------------------------------
+# Environments (NEVER commit a venv)
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+.venv/
+.venv_virtues/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ---------------------------------------------------------------------------
+# uv
+# (uv.lock IS committed for reproducibility — do not add it here)
+# ---------------------------------------------------------------------------
+.uv/
+
+# ---------------------------------------------------------------------------
+# IDE / editor / OS
+# ---------------------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# Jupyter
+# ---------------------------------------------------------------------------
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ---------------------------------------------------------------------------
+# Logs / temp
+# ---------------------------------------------------------------------------
+*.log
+logs/
+tmp/
+.tmp/
+
+# ---------------------------------------------------------------------------
+# Large bio-image / data files
+# (Commit fixtures under tests/data/ only if <2 MB. Use `git add -f` to
+# override on a per-file basis if you have a tiny tracked fixture.)
+# ---------------------------------------------------------------------------
+*.h5
+*.h5ad
+*.hdf5
+*.zarr
+*.zarr/
+*.tif
+*.tiff
+*.ome.tif
+*.ome.tiff
+*.svs
+*.ndpi
+*.czi
+*.nd2
+*.mrxs
+*.scn
+*.qptiff
+*.dcm
+*.nii
+*.nii.gz
+*.npy
+*.npz
+/data/
+outputs/
+results/
+checkpoints/
+*.ckpt
+*.pt
+*.pth
+*.safetensors
+
+# ---------------------------------------------------------------------------
+# Project-specific
+# ---------------------------------------------------------------------------
+.pipeline-test
+
+# Local CARTA 1mpp validation outputs (diagnostic only; never commit)
+diag_carta_1mpp/
+
+# Tutorial downloads / outputs (multi-GB example data, never committed)
+example-data/
+tutorial-*-output/
+
+# ---------------------------------------------------------------------------
+# Re-include small committed test fixtures (overrides bio-image extensions
+# above so tests/data/tiny_slide.zarr/ and similar can be committed).
+# Still keep bytecode caches out, even under tests/data/.
+# ---------------------------------------------------------------------------
+!tests/data/
+!tests/data/**
+tests/data/**/__pycache__/
+tests/data/**/*.pyc
+patch_legend_compare/

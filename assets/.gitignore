@@ -1,0 +1,5 @@
+# Encoder assets are large, license-encumbered, user-supplied files — never
+# commit them (they also blow the 2 MB pre-commit cap). Track only the docs.
+*
+!.gitignore
+!README.md

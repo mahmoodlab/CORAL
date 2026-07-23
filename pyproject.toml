@@ -1,0 +1,295 @@
+[project]
+name = "coral"
+version = "0.1.0"
+description = "Spatial proteomics toolkit built around the KRONOS foundation model."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Anurag Vaidya", email = "ajv012@bucknell.edu" },
+]
+keywords = [
+    "spatial-proteomics",
+    "multiplex-imaging",
+    "kronos",
+    "foundation-model",
+    "bioimaging",
+    "single-cell",
+    "image-analysis",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+dependencies = [
+    "numpy>=2.0",
+    "xarray>=2024.0",
+    "zarr>=2.18,<3",
+    "dask>=2024.0",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+    "rich>=13.0",
+    "geopandas>=1.0",
+    "shapely>=2.0",
+    "tifffile>=2024.0",
+    "imagecodecs>=2024.0",
+    "pandas>=2.2",
+    "scikit-image>=0.24",
+    "pillow>=10",
+    "matplotlib>=3.7",
+    "pyarrow>=24.0.0",
+    "tqdm>=4.66",
+]
+
+[project.urls]
+Repository = "https://github.com/mahmoodlab/CORAL"
+
+[project.scripts]
+coral = "coral.cli:app"
+
+[project.optional-dependencies]
+# Every torch-bearing extra below pins `setuptools`: Triton (pulled by torch on
+# Linux) imports it at runtime, but uv venvs don't seed setuptools and torch
+# only declares it on Python >=3.12 — so on 3.11 xFormers' Triton probe raises
+# ModuleNotFoundError('setuptools') without it. (conda envs ship it for free,
+# which is why pip/conda installs never hit this.)
+# Cell segmentation (sprint 05) — heavy (Cellpose 4.x cpsam + torch),
+# so it's an opt-in extra: `uv sync --extra cells` / `pip install coral[cells]`.
+# torch is capped <2.7 because torch >=2.7 ships only cu128/cu130 wheels
+# (needing newer NVIDIA drivers); <2.7 resolves to cu124, compatible with
+# CUDA-12.x-era drivers. GPU users on newer drivers can relax this.
+cells = [
+    "cellpose>=4",
+    "torch<2.7",
+    "torchvision<0.22",
+    "setuptools>=70",
+]
+# CARTA DL tissue segmentation (sprint 20) — the CARTA DeepLabV3-ResNet50 DAPI
+# segmenter, vendored into coral.tissue._carta (no dependency on the private CARTA
+# repo). Opt-in: `uv sync --extra carta` / `pip install coral[carta]`. Pins match
+# CARTA's own runtime (torch>=2.0 / torchvision>=0.15, no upper bound) so carta
+# co-resolves with the other torch extras without perturbing their locked
+# versions. Weights come from the private HF repo
+# MahmoodLab/CARTA (needs a token) or a local .pt via the
+# CARTA_TISSUE_WEIGHTS env var.
+carta = [
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "huggingface-hub>=0.34",
+]
+# KRONOS2 feature extractor (sprint 10) — heavy + version-locked. The four
+# numeric deps are pinned EXACTLY (overriding CORAL's usual liberal pinning):
+# KRONOS2 embeddings are bit-exact to the gold standard only on this stack
+# (fp32, batch >= 8). torch 2.6.0 resolves to the cu124 build; xformers
+# needs the matching cu124 wheel from the PyTorch index, so install with
+# `uv sync --extra kronos2 --index https://download.pytorch.org/whl/cu124`
+# (or `pip install coral[kronos2] --extra-index-url …/cu124`).
+kronos2 = [
+    "torch==2.6.0",
+    "xformers==0.0.29.post3",
+    "transformers==4.56.0",
+    "timm==1.0.19",
+    "huggingface-hub>=0.34,<1.0",
+    "omegaconf>=2.3",
+    "safetensors>=0.4",
+    "setuptools>=70",
+]
+# UNI feature extractor (sprint 12) — RGB pathology ViT-L/16 via timm from
+# the gated `hf-hub:MahmoodLab/UNI`. No bit-exact gold (shape-validated), so
+# pins stay liberal; torch resolves to the cu124 build alongside `kronos2`.
+uni = [
+    "torch>=2.4",
+    "timm>=1.0",
+    "huggingface-hub>=0.34",
+    "setuptools>=70",
+]
+camae = [
+    "huggingface-hub>=0.34",
+    "safetensors>=0.4",
+    "timm>=1.0",
+    "torch>=2.4",
+    "transformers>=4.40",
+    "setuptools>=70",
+]
+# DINOv2 feature extractor (sprint 16) — RGB ViT-L/14 via timm, the
+# PUBLIC `vit_large_patch14_reg4_dinov2.lvd142m` (no gated repo / token,
+# unlike `uni`/`kronos2`). Shape-validated, so pins stay liberal; torch
+# resolves to the cu124 build alongside the others.
+dinov2 = [
+    "huggingface-hub>=0.34",
+    "timm>=1.0",
+    "torch>=2.4",
+    "setuptools>=70",
+]
+# Eva feature extractor (sprint 17; model vendored into coral.features._eva
+# in sprint 17a). These are the Eva model's RUNTIME deps — the Eva package
+# itself is no longer required (it is vendored). Supply the GenePT pickle
+# in assets/Eva/. Public HF weights (`yandrewl/Eva`); liberal pins.
+eva = [
+    "einops>=0.6",
+    "huggingface-hub>=0.34",
+    "omegaconf>=2.3",
+    "timm>=1.0",
+    "torch>=2.4",
+    "torchvision>=0.19",
+    "setuptools>=70",
+]
+# KRONOS1 feature extractor (sprint 18; model vendored into
+# coral.features._kronos1 in sprint 18a) — the original published KRONOS
+# (ViT-S/16, 384-d). The `kronos` package is no longer required (vendored).
+# torch + xformers are pinned EXACTLY to the `kronos2` stack: the vendored
+# model uses xformers MemEffAttention, which has no CPU kernel and whose
+# wheel must match the torch cu124 build — a looser pin resolves a too-new
+# torch/xformers that fails on older CUDA drivers. Install with
+# `uv sync --extra kronos1 --index https://download.pytorch.org/whl/cu124`
+# (or `pip install coral[kronos1] --extra-index-url …/cu124`).
+kronos1 = [
+    "torch==2.6.0",
+    "xformers==0.0.29.post3",
+    "huggingface-hub>=0.34",
+    "setuptools>=70",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/coral"]
+
+# ---------------------------------------------------------------------------
+# Dependency groups (managed by uv)
+# Install dev tools with:  uv sync --group dev
+# ---------------------------------------------------------------------------
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "huggingface-hub>=1.18.0",
+    "h5py>=3.16.0",
+]
+
+# ---------------------------------------------------------------------------
+# uv: the `kronos2` extra is version-locked for bit-exact embeddings
+# (transformers==4.56.0 -> huggingface-hub <1.0), which conflicts with the
+# dev group's hub >=1.18. They are never installed together — CI/dev never
+# loads the model; KRONOS2 + its gated tests run in a separate env. Declaring
+# the conflict lets uv resolve each fork independently.
+# ---------------------------------------------------------------------------
+[tool.uv]
+# `dev` is opt-in: `uv sync` installs only runtime deps, `uv sync --group dev`
+# adds the tooling. This stops `uv sync --extra kronos2` from auto-pulling the
+# `dev` group, whose `huggingface-hub>=1.18` conflicts with kronos2's `<1.0`
+# (see the conflicts below). CI and contributors pass `--group dev` explicitly.
+default-groups = []
+conflicts = [
+    [{ extra = "kronos2" }, { group = "dev" }],
+]
+
+# ---------------------------------------------------------------------------
+# Ruff: lint + format (PEP 8 strict)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 79
+target-version = "py311"
+src = ["src", "tests"]
+# Vendored third-party code — kept verbatim, not linted (Eva + KRONOS1,
+# Apache-2.0).
+extend-exclude = [
+    "src/coral/features/_eva",
+    "src/coral/features/_kronos1",
+    "src/coral/tissue/_carta",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors (PEP 8)
+    "W",    # pycodestyle warnings (PEP 8)
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming (PEP 8 naming conventions)
+    "D",    # pydocstyle (docstring conventions)
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "SIM",  # simplify
+    "ANN",  # flake8-annotations (require type hints)
+]
+ignore = [
+    "D203",  # conflicts with D211
+    "D213",  # conflicts with D212
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "ANN"]  # tests need no docstrings or strict annotations
+"src/coral/__init__.py" = ["D104"]  # package init may have minimal docstring
+"src/coral/cli/**" = ["B008"]  # Typer pattern: typer.Option() in defaults is expected
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+docstring-code-format = true
+
+# ---------------------------------------------------------------------------
+# Pytest
+# --doctest-modules runs tests written inside docstrings (Google style)
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--doctest-modules",
+    "--ignore=src/coral/features/_eva",  # vendored: torch-importing, not collected
+    "--ignore=src/coral/features/_kronos1",  # vendored: torch-importing, not collected
+    "--ignore=src/coral/tissue/_carta",  # vendored: torch-importing, not collected
+    "--cov=coral",
+    "--cov-report=term-missing",
+]
+testpaths = ["tests", "src"]
+markers = [
+    "real_data: requires local fixture binaries in tests/real/data/ (opt-in via `pytest -m real_data`)",
+    "golden: compares against committed golden vectors from the fixture dataset (real-data, opt-in)",
+    "benchmark: speed + memory benchmark, parametrized over HDD vs SSD storage tiers",
+    "soft: judgment-dependent test (e.g. tissue vs background) — on failure, consult Anurag rather than auto-fixing",
+    "cellpose: runs the real Cellpose model (needs the `cells` extra + GPU + weights); skipped otherwise",
+    "carta: runs the real CARTA tissue model (needs the `carta` extra + weights via HF token or CARTA_TISSUE_WEIGHTS); skipped otherwise",
+    "kronos2: runs the real KRONOS2 model (needs the `kronos2` extra + GPU + weights); skipped otherwise",
+    "uni: runs the real UNI model (needs the `uni` extra + GPU + weights); skipped otherwise",
+    "camae: runs the real CA-MAE model (needs the `camae` extra + GPU + weights); skipped otherwise",
+    "dinov2: runs the real DINOv2 model (needs the `dinov2` extra + GPU + weights); skipped otherwise",
+    "eva: runs the real Eva model (needs the `eva` extra + the Eva package + a GenePT pickle + GPU); skipped otherwise",
+    "kronos1: runs the real KRONOS1 model (needs the `kronos1` extra + GPU + weights); skipped otherwise",
+]
+
+# ---------------------------------------------------------------------------
+# Coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["coral"]
+branch = true
+omit = [
+    "src/coral/features/_eva/*",  # vendored third-party code (Apache-2.0)
+    "src/coral/features/_kronos1/*",  # vendored third-party code (Apache-2.0)
+    "src/coral/tissue/_carta/*",  # vendored third-party code (CARTA, CC-BY-4.0)
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]

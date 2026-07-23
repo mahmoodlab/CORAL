@@ -1,0 +1,36 @@
+CARTA tissue-segmentation core (vendored into CORAL) — inference only
+====================================================================
+
+This directory (`coral.tissue._carta`) contains a vendored copy of the **inference**
+code from the CARTA project's `segmenter` package.
+
+    Upstream : CARTA (`segmenter/`)
+    License  : Creative Commons Attribution 4.0 International (CC BY 4.0)
+    Copyright: (c) 2026 CARTA contributors
+    See      : ./LICENSE
+
+It is embedded here so CORAL can run the CARTA DeepLabV3-ResNet50 DAPI tissue
+segmenter without taking a dependency on the (private) CARTA repository, mirroring
+how `coral.features._eva` and `coral.features._kronos1` vendor their upstream models.
+
+Files copied verbatim from CARTA `segmenter/`:
+    device.py
+
+Files copied with small, documented edits (see coral/tissue/_carta/__init__.py):
+    deeplabv3.py    - trimmed to inference (no train_from_patches / trainer /
+                      batching / losses / freeze_backbone); dropped unused
+                      segment_whole_slide; backbone built with weights=None
+    interface.py    - trimmed to the Segmenter ABC
+    config.py       - inference-only dataclasses + defaults (no YAML)
+    dapi_rgb.py     - normalize_percentile inlined (drop data.py / tifffile)
+    mask_cleanup.py - close_mask: scikit-image only (drop optional cv2 path)
+    tiled_infer.py  - dropped unused whole-slide tiled_segment_dapi path
+    core_mask_cleanup.py - dropped unused CoreMaskCleanup.log_line
+    seg_scale.py    - absorbs resample_to_target + inference-scale constant from
+                      core_detection_scale.py (not vendored separately; YOLO /
+                      dearray-target helpers dropped); added mask_seg_to_native
+                      (from CARTA e2e_pipeline.py)
+
+Only the DAPI-nuclear → tissue-mask inference path is vendored. NO training or loss
+code. CARTA's dearray / TMA / YOLO core detection, per-core OME export, and
+training-data code are not included.

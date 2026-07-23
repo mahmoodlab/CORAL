@@ -1,0 +1,33 @@
+Vendored KRONOS1 model code
+===========================
+
+This directory (`src/coral/features/_kronos1/`) contains a vendored copy of
+the published KRONOS model code (the `kronos.model` subpackage):
+
+    Source:   https://github.com/MahmoodLab/KRONOS
+    Files:    inference.py, vision_transformer.py, block.py, attention.py,
+              pos_embed.py, patch_embed.py, swiglu_ffn.py, dino_head.py,
+              mlp.py, layer_scale.py, drop_path.py
+    Commit:   f495ce776655478555924c6629c426aab584e99a
+    License:  Apache License 2.0 (see ./LICENSE) — the model code is
+              DINOv2-derived and carries Meta's Apache-2.0 headers.
+    Authors:  the KRONOS authors (Mahmood Lab)
+
+CORAL vendors this code (rather than depending on the external `kronos`
+package, which is not on PyPI and required a source install) so that
+`uv sync --extra kronos1` is sufficient to run the `KRONOS1` feature
+extractor. See `docs/specs/sprint-18a-kronos1-vendor.md`.
+
+Modifications from upstream (kept minimal for faithful, bit-identical
+behavior and easy re-sync):
+
+  1. The 11 module files above are copied verbatim (no edits) — they use
+     only relative (`from .X`) imports, which resolve unchanged here.
+  2. The package `__init__.py` is NOT a copy of upstream `kronos/__init__.py`
+     (which eagerly imports an unused image stack — `KRONOSImage`,
+     `ImagePatcher`, `load_qc_model`). It exposes only `create_model` and
+     `create_model_from_pretrained` from `inference`.
+
+To re-sync with a newer KRONOS release, re-copy the `kronos/model/*.py`
+files and re-check the relative-import assumption, then re-run the parity
+check (`scripts/kronos1_vendor_parity_check.py`).

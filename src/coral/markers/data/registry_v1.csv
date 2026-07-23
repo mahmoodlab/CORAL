@@ -1,0 +1,289 @@
+marker_name,compartment,family,compartment_desc,family_desc,marker_full_name
+CD3e,membrane,t_cell_marker,membrane protein,T-cell lineage marker,T-cell receptor CD3 complex
+panCK,membrane,epithelial_marker,membrane protein,Epithelial marker,Pan-cytokeratin (KRT family)
+SOX2,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,SRY-related HMG-box protein 9
+p16INK4a,nucleus,cell_cycle,nuclear protein,Cell-cycle/proliferation marker,cyclin-dependent kinase inhibitor 2A (CDKN2A)
+Synaptophysin,membrane,activation_marker,membrane protein,Immune activation marker,Synaptophysin
+CK20,cytoplasm,epithelial_keratin,cytoplasmic protein,Epithelial keratin (cytoskeletal filaments),Cytokeratin 20 (KRT20)
+COLLAGENiv,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Collagen (general)
+granzymeb,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,Granzyme B
+tcf1/7,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Transcription factor 7 (TCF7)
+mhci,membrane,mhc_i,membrane protein,MHC class I,Human leukocyte antigen
+COL1A,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Collagen (general)
+CD98,membrane,activation_marker,membrane protein,Immune activation/metabolic transporter marker,Cluster of Differentiation 98 (SLC3A2)
+OX40,membrane,activation_marker,membrane protein,T cell co-stimulatory receptor,OX40 (CD134 / TNFRSF4)
+pH2AX,nucleus,histone_mod,nuclear protein,DNA damage response marker,Phosphorylated Histone H2A.X (Ser139)
+cla_cd162,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,P-selectin glycoprotein ligand 1 (SELPLG CD162)
+mastcell_tryptase,cytoplasm,myeloid_marker,cytoplasmic protein,Myeloid-lineage marker,Mast cell tryptase (TPSAB1)
+DRAQ5,nucleus,dna_stain,nuclear protein,DNA stain for nuclei,DRAQ5 far-red DNA dye (DRAQ5)
+IL-10,extracellular,immune_checkpoint,extracellular protein,Immune checkpoint/ligand (membrane),Interleukin-10
+ifn_y,extracellular,activation_marker,extracellular protein,Immune activation marker,Interferon gamma (IFNG)
+tox_tox2,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Thymocyte selection-associated high mobility group box proteins TOX and TOX2 (TOX TOX2)
+pancytokeratin,membrane,epithelial_marker,membrane protein,Epithelial marker,Pan-cytokeratin (KRT family)
+DAPI,nucleus,dna_stain,nuclear protein,DNA stain for nuclei,"4′,6-diamidino-2-phenylindole"
+ARID1A,nucleus,chromatin_remodeler,nuclear protein,Chromatin remodeling factor,AT-rich interactive domain-containing protein 1A
+ATRX,nucleus,chromatin_remodeler,nuclear protein,Chromatin remodeling factor,Alpha thalassemia/mental retardation syndrome X-linked protein
+BCL6,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,B-cell lymphoma 6 protein
+CDT1,nucleus,cell_cycle,nuclear protein,Cell-cycle/proliferation marker,DNA replication factor Cdt1
+EBNA1,nucleus,qc_mask,nuclear protein,Derived mask/pseudo-channel,Epstein–Barr nuclear antigen 1
+EOMES,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Eomesodermin
+ERB,nucleus,activation_marker,nuclear protein,Immune activation marker,Estrogen receptor beta (ESR2)
+FOXP3,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Forkhead box protein P3
+GATA3,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,GATA-binding protein 3
+GEMININ,nucleus,cell_cycle,nuclear protein,Cell-cycle/proliferation marker,Geminin (GMNN)
+H2AX,nucleus,histone_core,nuclear protein,Core histone protein,H2A histone family member X
+H3K27AC,nucleus,histone_mod,nuclear protein,Histone post-translational modification,Histone H3 acetylated at lysine 27
+H3K27ME3,nucleus,histone_mod,nuclear protein,Histone post-translational modification,Histone H3 trimethylated at lysine 27
+HEY1,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Transcription factor HEY1
+HISTONEH3,nucleus,histone_core,nuclear protein,Core histone protein,Histone H3
+IRF4,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Interferon regulatory factor 4 (MUM1)
+KI67,nucleus,cell_cycle,nuclear protein,Cell-cycle/proliferation marker,Proliferation marker protein Ki-67 (MKI67)
+P53,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Cellular tumor antigen p53 (TP53)
+PAX5,nucleus,b_cell_marker,nuclear protein,B-cell lineage marker,Paired box protein Pax-5
+pHH3,nucleus,cell_cycle,nuclear protein,Cell-cycle/proliferation marker,Phospho-Histone H3
+PROX1,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Prospero homeobox protein 1
+RB,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Retinoblastoma-associated protein (RB1)
+TBET,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,T-box transcription factor TBX21 (T-bet)
+TCF1,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Transcription factor 7 (TCF7)
+TOX,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Thymocyte selection-associated high mobility group box protein (TOX)
+PTEN,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Phosphatase and tensin homolog
+RELA,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,NF-kB p65 subunit (RELA)
+RELB,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,NF-kB subunit RelB (RELB)
+A-SMA,cytoplasm,cytoskeleton,cytoplasmic protein,Cytoskeleton component,Alpha-smooth muscle actin (ACTA2)
+ACE2,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Angiotensin-converting enzyme 2
+ASS1,cytoplasm,metabolic_transporter,cytoplasmic protein,Metabolic transporter/marker,Argininosuccinate synthase 1
+ATP5A,cytoplasm,metabolic_transporter,cytoplasmic protein,Metabolic transporter/marker,"ATP synthase subunit alpha, mitochondrial (ATP5F1A)"
+B-CATENIN,membrane,epithelial_marker,membrane protein,Epithelial marker,Beta-catenin (CTNNB1)
+B-TUBULIN,cytoplasm,cytoskeleton,cytoplasmic protein,Cytoskeleton component,Beta-tubulin
+B2M,membrane,mhc_i,membrane protein,MHC class I,Beta-2-microglobulin
+B7H3,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),B7 homolog 3 (CD276)
+BCL2,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,B-cell lymphoma 2 protein
+BDCA-2,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Blood dendritic cell antigen 2 (CLEC4C)
+C1Q,extracellular,activation_marker,extracellular protein,Immune activation marker,Complement component C1q
+C4A,extracellular,activation_marker,extracellular protein,Immune activation marker,Complement component 4A
+CA9,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Carbonic anhydrase 9
+CATHEPSIN L,cytoplasm,metabolic_transporter,cytoplasmic protein,Metabolic transporter/marker,Cathepsin L (CTSL)
+CCR4,membrane,activation_marker,membrane protein,Immune activation marker,C-C chemokine receptor type 4
+CCR6,membrane,activation_marker,membrane protein,Immune activation marker,C-C chemokine receptor type 6
+CCR7,membrane,activation_marker,membrane protein,Immune activation marker,C-C chemokine receptor type 7
+CD10,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,"Neutral endopeptidase (MME, CD10)"
+CD103,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,"Integrin alpha E (ITGAE, CD103)"
+CD106,membrane,activation_marker,membrane protein,Immune activation marker,Cluster of Differentiation CD106
+CD107A,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD107A
+CD11B,membrane,myeloid_marker,membrane protein,Myeloid-lineage marker,Cluster of Differentiation CD11B
+CD11C,membrane,myeloid_marker,membrane protein,Myeloid-lineage marker,Cluster of Differentiation CD11C
+CD134,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD134
+CD138,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,"Syndecan-1 (SDC1, CD138)"
+CD14,membrane,myeloid_marker,membrane protein,Myeloid-lineage marker,Monocyte differentiation antigen CD14
+CD15,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Lewis X antigen (CD15)
+CD16,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Fc gamma receptor III (FCGR3)
+CD162,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD162
+CD163,membrane,myeloid_marker,membrane protein,Myeloid-lineage marker,Hemoglobin scavenger receptor (CD163)
+CD164,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Sialomucin core protein 24 (CD164)
+CD19,membrane,b_cell_marker,membrane protein,B-cell lineage marker,B-lymphocyte antigen CD19
+CD1A,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,CD1a antigen
+CD1B,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,CD1b antigen
+CD1C,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,CD1c antigen
+CD2,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,T-cell surface antigen CD2
+CD20,membrane,b_cell_marker,membrane protein,B-cell lineage marker,B-lymphocyte antigen CD20 (MS4A1)
+CD206,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,"Macrophage mannose receptor (MRC1, CD206)"
+CD21,membrane,b_cell_marker,membrane protein,B-cell lineage marker,"Complement receptor type 2 (CR2, CD21)"
+CD23,membrane,b_cell_marker,membrane protein,B-cell lineage marker,"Low-affinity IgE receptor (FCER2, CD23)"
+CD25,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,"Interleukin-2 receptor alpha chain (IL2RA, CD25)"
+CD27,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),CD27 antigen (TNFRSF7)
+CD271,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD271
+CD28,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),T-cell-specific surface glycoprotein CD28
+CD3,membrane,t_cell_marker,membrane protein,T-cell lineage marker,T-cell receptor CD3 complex
+CD30,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD30
+CD31,membrane,endothelial_marker,membrane protein,Endothelial cell marker,Platelet endothelial cell adhesion molecule (PECAM-1)
+CD34,membrane,endothelial_marker,membrane protein,Endothelial cell marker,Hematopoietic progenitor cell antigen CD34
+CD35,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD35
+CD36,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD36
+CD38,membrane,activation_marker,membrane protein,Immune activation marker,ADP-ribosyl cyclase/cADPR hydrolase (CD38)
+CD39,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),"Ectonucleoside triphosphate diphosphohydrolase 1 (ENTPD1, CD39)"
+CD4,membrane,t_cell_marker,membrane protein,T-cell lineage marker,T-cell surface glycoprotein CD4
+CD40,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),TNF receptor superfamily member 5 (CD40)
+CD44,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,CD44 antigen (homing cell adhesion molecule)
+CD45,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,"Leukocyte common antigen (PTPRC, CD45)"
+CD45RA,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Leukocyte common antigen isoform RA
+CD45RO,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Leukocyte common antigen isoform RO
+CD49A,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD49A
+CD5,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD5
+CD54,membrane,activation_marker,membrane protein,Immune activation marker,Cluster of Differentiation CD54
+CD56,membrane,nk_cell_marker,membrane protein,Natural killer cell marker,"Neural cell adhesion molecule 1 (NCAM1, CD56)"
+CD57,membrane,nk_cell_marker,membrane protein,Natural killer cell marker,HNK-1 carbohydrate epitope (CD57)
+CD61,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD61
+CD66B,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD66B
+CD68,cytoplasm,myeloid_marker,cytoplasmic protein,Myeloid-lineage marker,Macrophage marker CD68
+CD69,membrane,activation_marker,membrane protein,Immune activation marker,Early activation antigen CD69
+CD7,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD7
+CD8,membrane,t_cell_marker,membrane protein,T-cell lineage marker,T-cell surface glycoprotein CD8
+CGAS,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,Cyclic GMP-AMP synthase (cGAS)
+CLEAVED_CASP3,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,Cleaved caspase-3 (active CASP3)
+CLEC9A,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,C-type lectin domain family 9 member A (DNGR-1)
+CLUSTERIN,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Clusterin (Apolipoprotein J)
+COLLAGEN,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Collagen (general)
+CS,cytoplasm,metabolic_transporter,cytoplasmic protein,Metabolic transporter/marker,Citrate synthase (CS)
+CTLA4,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Cytotoxic T-lymphocyte–associated protein 4
+CXCL13,extracellular,activation_marker,extracellular protein,Immune activation marker,C-X-C motif chemokine ligand 13
+CXCR5,membrane,activation_marker,membrane protein,Immune activation marker,C-X-C chemokine receptor type 5
+CYTOKERATIN,membrane,epithelial_marker,membrane protein,Epithelial marker,Pan-cytokeratin (KRT family)
+DC-SIGN,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Dendritic cell-specific ICAM-3-grabbing non-integrin (CD209)
+DESMIN,cytoplasm,cytoskeleton,cytoplasmic protein,Cytoskeleton component,Desmin
+E-CADHERIN,membrane,epithelial_junction,membrane protein,Epithelial adherens junction (membrane),E-cadherin (CDH1)
+EGFR,membrane,epithelial_marker,membrane protein,Epithelial marker,Epidermal growth factor receptor (ERBB1)
+EPCAM,membrane,epithelial_marker,membrane protein,Epithelial marker,Epithelial cell adhesion molecule (EpCAM)
+FIBRINOGEN,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Fibrinogen
+FN1,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Fibronectin (FN1)
+G6PD,cytoplasm,metabolic_transporter,cytoplasmic protein,Metabolic transporter/marker,Glucose-6-phosphate dehydrogenase
+GALECTIN-3,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Galectin-3 (LGALS3)
+GITR,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Glucocorticoid-induced TNFR-related protein (TNFRSF18)
+GLUT1,membrane,metabolic_transporter,membrane protein,Metabolic transporter/marker,Glucose transporter type 1 (SLC2A1)
+GLYCOPHORIN_A,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Glycophorin A (GYPA)
+GZMA,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,Granzyme A
+GZMB,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,Granzyme B
+HEPATOCYTE_AG,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Hepatocyte antigen (HepPar-1)
+HER2,membrane,epithelial_marker,membrane protein,Epithelial marker,Receptor tyrosine-protein kinase erbB-2 (ERBB2)
+HLA_1,membrane,mhc_i,membrane protein,MHC class I,Human leukocyte antigen
+HLA_DR,membrane,mhc_ii,membrane protein,MHC class II,Human leukocyte antigen
+HLA_DRA,membrane,mhc_ii,membrane protein,MHC class II,Human leukocyte antigen
+HLA_DRBPB,membrane,mhc_ii,membrane protein,MHC class II,Human leukocyte antigen
+HSP27,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,Heat shock protein 27 (HSPB1)
+IBA1,cytoplasm,myeloid_marker,cytoplasmic protein,Myeloid-lineage marker,Ionized calcium-binding adapter molecule 1 (AIF1)
+ICAM1,membrane,activation_marker,membrane protein,Immune activation marker,Intercellular adhesion molecule 1
+ICOS,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Inducible T-cell co-stimulator
+IDH,cytoplasm,metabolic_transporter,cytoplasmic protein,Metabolic transporter/marker,Isocitrate dehydrogenase
+IDO1,cytoplasm,metabolic_transporter,cytoplasmic protein,Metabolic transporter/marker,"Indoleamine 2,3-dioxygenase 1"
+IGA1,extracellular,b_cell_marker,extracellular protein,B-cell lineage marker,Immunoglobulin A1
+IGA2,extracellular,b_cell_marker,extracellular protein,B-cell lineage marker,Immunoglobulin A2
+IGD,extracellular,b_cell_marker,extracellular protein,B-cell lineage marker,Immunoglobulin D
+IGM,extracellular,b_cell_marker,extracellular protein,B-cell lineage marker,Immunoglobulin M
+IL-1B,extracellular,activation_marker,extracellular protein,Immune activation marker,Interleukin-1 beta (IL1B)
+INOS,cytoplasm,metabolic_transporter,cytoplasmic protein,Metabolic transporter/marker,Inducible nitric oxide synthase (NOS2)
+LAG3,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Lymphocyte activation gene 3 protein
+LAMINA,nucleus,cytoskeleton,nuclear protein,Cytoskeleton component,Nuclear lamina (Lamin A/C)
+LANGERIN,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Langerin (CD207)
+LMP1,membrane,qc_mask,membrane protein,Derived mask/pseudo-channel,Latent membrane protein 1 (EBV)
+LUMICAN,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Lumican (LUM)
+LYSOZYME,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,Lysozyme C
+LYVE-1,membrane,endothelial_marker,membrane protein,Endothelial cell marker,Lymphatic vessel endothelial hyaluronan receptor 1
+MCT,membrane,metabolic_transporter,membrane protein,Metabolic transporter/marker,Monocarboxylate transporter (MCT family)
+MMP9,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Matrix metalloproteinase-9
+MPO,cytoplasm,myeloid_marker,cytoplasmic protein,Myeloid-lineage marker,Myeloperoxidase
+MUC1,extracellular,epithelial_marker,extracellular protein,Epithelial marker,Mucin-1 (MUC1)
+MUC5AC,extracellular,epithelial_marker,extracellular protein,Epithelial marker,Mucin-5AC
+NAKATP,membrane,metabolic_transporter,membrane protein,Metabolic transporter/marker,Sodium/potassium-transporting ATPase
+NOTCH2,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Neurogenic locus notch homolog protein 2
+PD1,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Programmed cell death protein 1 (PDCD1)
+PDL1,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Programmed death-ligand 1 (CD274)
+PODOCIN,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Podocin (NPHS2)
+PODOPLANIN,membrane,endothelial_marker,membrane protein,Endothelial cell marker,Podoplanin (PDPN)
+RAS,membrane,epithelial_marker,membrane protein,Epithelial marker,Ras family of small GTPases
+S100,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,S100 calcium-binding protein family
+SIGELC-3,membrane,myeloid_marker,membrane protein,Myeloid-lineage marker,Sialic acid-binding Ig-like lectin 3 (SIGLEC3/CD33)
+SIGLEC-7,membrane,myeloid_marker,membrane protein,Myeloid-lineage marker,Sialic acid-binding Ig-like lectin 7
+SIGLEC-9,membrane,myeloid_marker,membrane protein,Myeloid-lineage marker,Sialic acid-binding Ig-like lectin 9
+SPARC,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Secreted protein acidic and rich in cysteine
+STING,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,Stimulator of interferon genes (TMEM173)
+TCR_B,membrane,t_cell_marker,membrane protein,T-cell lineage marker,T-cell receptor beta chain
+TCR_GD,membrane,t_cell_marker,membrane protein,T-cell lineage marker,T-cell receptor gamma delta
+TCR_VA7.2,membrane,t_cell_marker,membrane protein,T-cell lineage marker,T-cell receptor alpha variable 7.2
+TIM3,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),T-cell immunoglobulin and mucin-domain containing-3 (HAVCR2)
+TMPRSS2,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Transmembrane protease serine 2
+TREM2,membrane,myeloid_marker,membrane protein,Myeloid-lineage marker,Triggering receptor expressed on myeloid cells 2
+UROMODULIN,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Uromodulin (Tamm–Horsfall protein)
+VDAC1,membrane,metabolic_transporter,membrane protein,Metabolic transporter/marker,Voltage-dependent anion-selective channel protein 1
+VIMENTIN,cytoplasm,cytoskeleton,cytoplasmic protein,Cytoskeleton component,Vimentin
+VISTA,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),V-domain Ig suppressor of T cell activation (C10orf54)
+PU1,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Transcription factor PU.1 (SPI1)
+GZMK,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,Granzyme K
+CD79A,membrane,B_cell_marker,membrane protein,B-cell lineage marker,Cluster of Differentiation CD79A
+CD123,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,"Interleukin-3 receptor alpha chain (IL3RA, CD123)"
+CD40L,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Cluster of Differentiation CD40L
+TIGIT,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),T cell immunoreceptor with Ig and ITIM domains
+GFAP,cytoplasm,myeloid_marker,cytoplasmic protein,Myeloid-lineage marker,Glial fibrillary acidic protein
+AQP4,membrane,myeloid_marker,membrane protein,Myeloid-lineage marker,Aquaporin-4
+PLVAP,membrane,endothelial_marker,membrane protein,Endothelial cell marker,Plasmalemma vesicle-associated protein
+CLDN5,membrane,endothelial_marker,membrane protein,Endothelial cell marker,Claudin-5
+OCLN,membrane,epithelial_marker,membrane protein,Epithelial marker,Occludin
+HIF1A,nucleus,activation_marker,nuclear protein,Immune activation marker,Hypoxia-inducible factor 1-alpha
+OLIG2,nucleus,activation_marker,nuclear protein,Immune activation marker,Oligodendrocyte transcription factor 2
+P2RY12,membrane,myeloid_marker,membrane protein,Myeloid-lineage marker,Purinergic receptor P2Y12
+SPP1,extracellular,activation_marker,extracellular protein,Immune activation marker,Osteopontin (Secreted phosphoprotein 1)
+P24,extracellular,qc_mask,extracellular protein,Derived mask/pseudo-channel,HIV-1 capsid protein p24
+LMP2A,membrane,qc_mask,membrane protein,Derived mask/pseudo-channel,Latent membrane protein 2A (EBV)
+NEUN,nucleus,neuron_marker,nuclear protein,Neuron marker,Neuronal nuclei antigen (RBFOX3)
+EBNA2,nucleus,qc_mask,nuclear protein,Derived mask/pseudo-channel,Epstein–Barr nuclear antigen 2
+PS6,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,Phospho-S6 ribosomal protein
+P17,extracellular,qc_mask,extracellular protein,Derived mask/pseudo-channel,HIV-1 matrix protein p17
+PNFKB-P105,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Phospho-NF-kB p105 (NFKB1)
+SIRPA,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Signal regulatory protein alpha (CD172a)
+CD62L,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD62L
+IFNG,extracellular,activation_marker,extracellular protein,Immune activation marker,Interferon gamma (IFN-γ)
+A2AR,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Adenosine A2A receptor (ADORA2A)
+CXCL9,extracellular,activation_marker,extracellular protein,Immune activation marker,C-X-C motif chemokine ligand 9
+ERA,nucleus,activation_marker,nuclear protein,Immune activation marker,Estrogen receptor alpha (ESR1)
+PR,nucleus,activation_marker,nuclear protein,Immune activation marker,Progesterone receptor (PGR)
+FAP,membrane,fibroblast_marker,membrane protein,Fibroblast/CAF marker,Fibroblast activation protein alpha
+FOXO1,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Forkhead box protein O1
+CD117,membrane,epithelial_marker,membrane protein,Epithelial marker,"Mast/stem cell growth factor receptor (KIT, CD117)"
+CD127,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,"Interleukin-7 receptor subunit alpha (IL7R, CD127)"
+CD161,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD161
+CD49F,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD49F
+CD66,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD66
+CD90,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation CD90
+CDX2,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Caudal type homeobox protein 2
+CHGA,cytoplasm,epithelial_marker,cytoplasmic protein,Epithelial marker,Chromogranin A
+ITLN1,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Intelectin-1 (Omentin-1)
+MUC2,membrane,epithelial_marker,membrane protein,Epithelial marker,Mucin-2
+MUC6,membrane,epithelial_marker,membrane protein,Epithelial marker,Mucin-6
+NKG2D,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,"Killer cell lectin-like receptor subfamily K member 1 (KLRK1, NKG2D)"
+OLFM4,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Olfactomedin-4
+SOX9,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,SRY-related HMG-box protein 9
+SYP,membrane,activation_marker,membrane protein,Immune activation marker,Synaptophysin
+DEFA5,extracellular,activation_marker,extracellular protein,Immune activation marker,Defensin alpha 5
+CD45RB,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Leukocyte common antigen isoform RB
+CK17,membrane,epithelial_keratin,membrane protein,Epithelial keratin (cytoskeletal filaments),Cytokeratin 17 (KRT17)
+H3K9AC,nucleus,histone_mod,nuclear protein,Histone post-translational modification,Histone H3 acetylated at lysine 9
+4-1BB,membrane,activation_marker,membrane protein,Immune activation marker,4-1BB
+ACC,cytoplasm,metabolic_transporter,cytoplasmic protein,Metabolic transporter/marker,Acetyl-CoA Carboxylase
+AR,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Androgen receptor
+ARGINASE1,cytoplasm,myeloid_marker,cytoplasmic protein,Myeloid-lineage marker,Arginase 1
+C4B,extracellular,activation_marker,extracellular protein,Immune activation marker,Complement component 4B
+CATHEPSIN,cytoplasm,metabolic_transporter,cytoplasmic protein,Metabolic transporter/marker,Cathepsin
+CD13,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation 13
+CD24,membrane,pan_leukocyte,membrane protein,Pan-leukocyte marker,Cluster of Differentiation 24
+CD46,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Cluster of Differentiation 46
+CD47,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Cluster of Differentiation 47
+CD71,membrane,activation_marker,membrane protein,Immune activation marker,Cluster of Differentiation 71
+CD73,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Cluster of Differentiation 73
+CD86,membrane,activation_marker,membrane protein,Immune activation marker,Cluster of Differentiation 86
+CD94,membrane,immune_checkpoint,membrane protein,Natural killer cell marker,Cluster of Differentiation 94
+CHAT,cytoplasm,metabolic_transporter,membrane protein,Metabolic transporter/marker,Choline acetyltransferase
+CYTOKERATIN_EPCAM,membrane,epithelial_marker,membrane protein,Epithelial marker,Pan-cytokeratin
+FABP4,cytoplasm,metabolic_transporter,cytoplasmic protein,Metabolic transporter/marker,Fatty acid binding protein 4
+FOLR2,membrane,myeloid_marker,membrane protein,Myeloid-lineage marker,Folate receptor beta
+GALECTIN-8,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Galectin-8 (LGALS8)
+GALECTIN-9,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Galectin-9 (LGALS9)
+GS,cytoplasm,metabolic_enzyme,cytoplasmic protein,Metabolic transporter/marker,Glutamine synthetase
+HBCAG,nucleus,qc_mask,nuclear protein,Derived mask/pseudo-channel,Hepatitis B core antigen (HBV)
+HBSAG,membrane,qc_mask,membrane protein,Derived mask/pseudo-channel,Hepatitis B surface antigen (HBV)
+HBV_POLYMERASE,cytoplasm,qc_mask,cytoplasmic protein,Derived mask/pseudo-channel,Hepatitis B virus polymerase (HBV)
+HLA_DPQR,membrane,mhc_ii,membrane protein,MHC class II,Human leukocyte antigen
+HLA_E,membrane,mhc_i,membrane protein,MHC class I,Human leukocyte antigen
+IGG,extracellular,b_cell_marker,extracellular protein,B-cell lineage marker,Immunoglobulin G
+IL-18,extracellular,activation_marker,extracellular protein,Immune activation marker,Interleukin-18
+ISG15,cytoplasm,activation_marker,cytoplasmic protein,Immune activation marker,ISG15 ubiquitin like modifier
+MBL,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Mannose-binding lectin
+MMP12,extracellular,ecm_matrix,extracellular protein,Extracellular matrix component,Matrix metalloproteinase 12
+MUC5B,extracellular,epithelial_marker,extracellular protein,Epithelial marker,Mucin-5B
+NAKATP_B2M,membrane,epithelial_marker,membrane protein,Epithelial marker,"Sodium/potassium-transporting ATPase, Beta-2-microglobulin"
+PAX8,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Paired box protein PAX8
+PDGFRB,membrane,pericyte_marker,membrane protein,Pericyte marker,Platelet-derived growth factor receptor beta
+PDL2,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Programmed death-ligand 2 (PDCD1LG2)
+PLA2,cytoplasm,metabolic_enzyme,cytoplasmic protein,Metabolic transporter/marker,Phospholipase A2
+RORGD,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Retinoic acid-related orphan receptor gamma t
+SIGLEC-10,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Sialic acid-binding Ig-like lectin 10
+SIGLEC-15,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Sialic acid-binding Ig-like lectin 15
+SIGLEC-8,membrane,immune_checkpoint,membrane protein,Immune checkpoint/ligand (membrane),Sialic acid-binding Ig-like lectin 8
+pNFKB,nucleus,transcription_factor,nuclear protein,Nuclear transcription factor,Phosphorylated NF-kB
