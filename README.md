@@ -4,9 +4,9 @@
 
 [KRONOS2](https://huggingface.co/MahmoodLab/KRONOS2) | [CARTA](https://huggingface.co/MahmoodLab/CARTA) | Technical report (coming soon) | [Cite](#reference)
 
-<img align="right" src="coral.jpg" width="250px" />
-
 ## What is CORAL?
+
+<img align="right" src="coral.jpg" width="250px" />
 
 Spatial biology turns a single tissue section into a rich map of proteins, cells, and neighborhoods. But getting from those raw images to insights usually means stitching together many tools and writing a lot of glue code in between.
 
