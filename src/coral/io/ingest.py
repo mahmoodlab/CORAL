@@ -625,6 +625,190 @@ def _resolve_nuclear_channel(
     return idx
 
 
+# NGFF omero display defaults — do not scan pixels. Window end is a
+# conservative uint16 fluorescence display range (IDR-style); QuPath's
+# B&C dialog can still auto-adjust. Nuclear channel starts active only.
+_OMERO_WINDOW_MAX = 65535.0
+_OMERO_WINDOW_END = 4096.0
+_OMERO_COLORS = (
+    "0000FF",  # blue — typical nuclear
+    "00FF00",
+    "FF0000",
+    "FFFF00",
+    "00FFFF",
+    "FF00FF",
+    "FFFFFF",
+    "FFA500",
+)
+
+# QuPath/Bio-Formats read channel names + PhysicalSize from this sidecar;
+# the transitional ``omero`` block alone is parsed but not applied to the
+# MetadataStore (see ome/ZarrReader.parseOmeroMetadata).
+_OME_XML_NS = "http://www.openmicroscopy.org/Schemas/OME/2016-06"
+
+
+def _ome_pixel_type(dtype: np.dtype) -> tuple[str, int]:
+    """Map a numpy dtype to OME Pixels Type + SignificantBits."""
+    kind = np.dtype(dtype)
+    if kind == np.uint8:
+        return "uint8", 8
+    if kind == np.uint16:
+        return "uint16", 16
+    if kind == np.uint32:
+        return "uint32", 32
+    if kind == np.int8:
+        return "int8", 8
+    if kind == np.int16:
+        return "int16", 16
+    if kind == np.int32:
+        return "int32", 32
+    if kind == np.float32:
+        return "float", 32
+    if kind == np.float64:
+        return "double", 64
+    return "uint16", 16
+
+
+def _write_ome_metadata_xml(
+    store_path: Path,
+    markers: list[str],
+    mpp: float,
+    shape_cyx: tuple[int, int, int],
+    dtype: np.dtype,
+) -> None:
+    """Write ``OME/METADATA.ome.xml`` for Bio-Formats / QuPath.
+
+    Channel ``Name`` and ``PhysicalSizeX/Y`` are what QuPath surfaces as
+    channel names and micron pixel size. Pixels are not touched.
+    """
+    from xml.sax.saxutils import escape
+
+    size_c, size_y, size_x = (int(v) for v in shape_cyx)
+    pix_type, sig_bits = _ome_pixel_type(dtype)
+    mpp_f = float(mpp)
+    channels_xml = "\n".join(
+        f'      <Channel ID="Channel:0:{i}" Name="{escape(str(name))}" '
+        f'SamplesPerPixel="1"/>'
+        for i, name in enumerate(markers)
+    )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        f'<OME xmlns="{_OME_XML_NS}" '
+        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
+        'xsi:schemaLocation="'
+        f"{_OME_XML_NS} "
+        f'{_OME_XML_NS}/ome.xsd">\n'
+        '  <Image ID="Image:0" Name="0">\n'
+        '    <Pixels BigEndian="false" DimensionOrder="XYCZT" '
+        'ID="Pixels:0" Interleaved="false" '
+        f'SignificantBits="{sig_bits}" '
+        f'PhysicalSizeX="{mpp_f}" PhysicalSizeXUnit="µm" '
+        f'PhysicalSizeY="{mpp_f}" PhysicalSizeYUnit="µm" '
+        f'SizeC="{size_c}" SizeT="1" SizeX="{size_x}" '
+        f'SizeY="{size_y}" SizeZ="1" Type="{pix_type}">\n'
+        f"{channels_xml}\n"
+        f'      <TiffData FirstC="0" FirstT="0" FirstZ="0" '
+        f'PlaneCount="{size_c}"/>\n'
+        "    </Pixels>\n"
+        "  </Image>\n"
+        "</OME>\n"
+    )
+    ome_dir = store_path / "OME"
+    ome_dir.mkdir(parents=True, exist_ok=True)
+    (ome_dir / ".zgroup").write_text('{"zarr_format": 2}\n')
+    (ome_dir / "METADATA.ome.xml").write_text(xml)
+
+
+def _write_ngff_external_attrs(
+    root: Any,
+    markers: list[str],
+    mpp: float,
+    *,
+    nuclear_marker: str | None = None,
+) -> None:
+    """Write additive OME-NGFF 0.4 attrs for external readers (QuPath).
+
+    Sets ``multiscales`` (axes ``c,y,x`` + level-0 scale), ``omero``
+    (labels / display), and ``OME/METADATA.ome.xml`` (channel names +
+    PhysicalSize for Bio-Formats). Does not touch CORAL custom attrs or
+    pixel data.
+
+    Args:
+        root: Open zarr group for the slide store.
+        markers: Display labels, one per channel axis.
+        mpp: Isotropic microns-per-pixel for the y/x scale transform.
+        nuclear_marker: Channel label to mark ``active`` in omero (others
+            off). When ``None``, channel 0 is active.
+    """
+    mpp_f = float(mpp)
+    root.attrs["multiscales"] = [
+        {
+            "version": "0.4",
+            "axes": [
+                {"name": "c", "type": "channel"},
+                {"name": "y", "type": "space", "unit": "micrometer"},
+                {"name": "x", "type": "space", "unit": "micrometer"},
+            ],
+            "datasets": [
+                {
+                    "path": "0",
+                    "coordinateTransformations": [
+                        {
+                            "type": "scale",
+                            "scale": [1.0, mpp_f, mpp_f],
+                        },
+                    ],
+                }
+            ],
+        }
+    ]
+    nuclear_key = (nuclear_marker or "").strip().lower()
+    active_idx = 0
+    if nuclear_key:
+        for i, name in enumerate(markers):
+            if str(name).strip().lower() == nuclear_key:
+                active_idx = i
+                break
+    root.attrs["omero"] = {
+        "channels": [
+            {
+                "label": name,
+                "color": _OMERO_COLORS[i % len(_OMERO_COLORS)],
+                "active": i == active_idx,
+                "coefficient": 1.0,
+                "family": "linear",
+                "inverted": False,
+                "window": {
+                    "min": 0.0,
+                    "max": _OMERO_WINDOW_MAX,
+                    "start": 0.0,
+                    "end": _OMERO_WINDOW_END,
+                },
+            }
+            for i, name in enumerate(markers)
+        ]
+    }
+
+    # Bio-Formats / QuPath: names + micron scale come from OME-XML.
+    if "0" in root:
+        arr = root["0"]
+        store_path = Path(str(root.store.path))
+        shape = tuple(int(s) for s in arr.shape)
+        if len(shape) != 3:
+            logger.warning(
+                "skip OME/METADATA.ome.xml: expected (c,y,x) array, got %s",
+                shape,
+            )
+        else:
+            _write_ome_metadata_xml(
+                store_path,
+                markers,
+                mpp_f,
+                shape_cyx=(shape[0], shape[1], shape[2]),
+                dtype=np.dtype(arr.dtype),
+            )
+
+
 def _write_canonical_zarr(
     out_path: Path,
     image: np.ndarray,
@@ -640,6 +824,7 @@ def _write_canonical_zarr(
     ``channels`` (the single source of truth — lower-case
     ``{marker, raw, match}`` per channel), ``nuclear_channel`` (the
     nuclear stain by name), ``mpp``, and ``source_pyramid_levels``.
+    Also writes additive NGFF 0.4 ``multiscales`` + ``omero``.
 
     Only level 0 is written; multi-resolution pyramid generation is not
     yet implemented. When the source carried more pyramid levels a
@@ -682,6 +867,17 @@ def _write_canonical_zarr(
     root.attrs["nuclear_channel"] = markers[nuclear_idx]
     root.attrs["mpp"] = mpp
     root.attrs["source_pyramid_levels"] = source_pyramid_levels
+    # Prefer resolved marker; fall back to raw so QuPath never sees a blank.
+    omero_labels = [
+        (m if m else (ch.raw or f"channel_{i}"))
+        for i, (m, ch) in enumerate(zip(markers, channels, strict=True))
+    ]
+    _write_ngff_external_attrs(
+        root,
+        omero_labels,
+        mpp,
+        nuclear_marker=markers[nuclear_idx],
+    )
     if source_pyramid_levels > 1:
         logger.warning(
             "%s: source has %d pyramid levels; CORAL stores level 0 only "
@@ -792,6 +988,19 @@ def apply_marker_names(
     nuclear_name = markers[nuclear_idx]
     root.attrs["channels"] = [ch.model_dump() for ch in channels]
     root.attrs["nuclear_channel"] = nuclear_name
+    # Refresh NGFF labels to match re-resolved markers; scale uses the
+    # store's existing mpp (unchanged by this path). Prefer resolved
+    # marker; fall back to raw so QuPath never sees a blank.
+    omero_labels = [
+        (m if m else (ch.raw or f"channel_{i}"))
+        for i, (m, ch) in enumerate(zip(markers, channels, strict=True))
+    ]
+    _write_ngff_external_attrs(
+        root,
+        omero_labels,
+        float(root.attrs["mpp"]),
+        nuclear_marker=nuclear_name,
+    )
     logger.debug("%s: re-applied marker names (no pixel re-read)", path.name)
 
     # Refresh the thumbnail only if the nuclear channel moved (or none
