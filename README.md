@@ -12,6 +12,8 @@ Spatial biology turns a single tissue section into a rich map of proteins, cells
 
 **CORAL handles the computational heavy lifting, so you can focus on the biology:** cell types, spatial neighborhoods, and links to patient outcomes.
 
+**The distinguishing feature of CORAL from other spatial proteomics package is that it is Foundation Model (FM)-centric:** With CORAL, the user can leverage a collection of powerful FMs pretrained on large and diverse spatial proteomics datasets for their data analyses. 
+
 Today CORAL supports **spatial proteomics** (multiplexed antibody imaging such as CODEX and PhenoCycler). Support for **spatial transcriptomics** is on the way!
 
 > **New here? [Start with the tutorials.](#tutorials)** They walk through the whole pipeline, step by step, on a real slide.
@@ -87,9 +89,9 @@ Train a simple classifier on KRONOS2 features to label cell types.<br>
 
 * * *
 
-🧬 **Finetune KRONOS2 for cell phenotyping** *(coming soon)*<br>
+🧬 **Finetune KRONOS2 for cell phenotyping**<br>
 Get more accuracy from KRONOS2 by finetuning it on your own labeled cells.<br>
-*Tutorial 6: Finetuning KRONOS2 for Cell Phenotyping*
+[**Tutorial 6: Finetuning KRONOS2 for Cell Phenotyping**](./tutorials/6-LoRA-Finetuning.ipynb)
 
 * * *
 
