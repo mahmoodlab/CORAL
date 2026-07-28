@@ -13,10 +13,72 @@ The same YAML also drives ``coral extract --subset``: there its
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
 from pydantic import BaseModel, Field
+
+
+def slugify(stem: str) -> str:
+    """Normalize a filename stem to a safe variant-folder leaf.
+
+    Lowercases, collapses every run of non-alphanumeric characters into a
+    single underscore, and strips leading/trailing underscores. Returns an
+    empty string when nothing usable survives (the caller then errors,
+    rather than emitting a nameless folder).
+
+    Args:
+        stem: A filename stem (e.g. ``Path("Immune Panel.yaml").stem``).
+
+    Returns:
+        A ``[a-z0-9_]`` slug, or ``""`` if the stem has no letters/digits.
+
+    Example:
+        >>> slugify("Immune Panel.v2")
+        'immune_panel_v2'
+        >>> slugify("---")
+        ''
+    """
+    return re.sub(r"[^a-z0-9]+", "_", stem.lower()).strip("_")
+
+
+def variant_name(subset_path: str | Path | None) -> str:
+    """Name the feature variant folder for a subset YAML (or all markers).
+
+    The single source of truth for variant naming, shared by ``coral
+    extract`` and :meth:`~coral.slide.CoralSlide.encode_features` so the
+    CLI and the Python API resolve the *same* folder for the same
+    selection.
+
+    Args:
+        subset_path: Path to the ``--subset`` YAML, or ``None`` for the
+            full kept-marker panel.
+
+    Returns:
+        ``"markers_all"`` when ``subset_path`` is ``None``, else
+        ``"markers_<stem>"`` from the slugified filename stem.
+
+    Raises:
+        ValueError: If the filename stem has no letters or digits to name
+            a folder with.
+
+    Example:
+        >>> variant_name(None)
+        'markers_all'
+        >>> variant_name("panels/Immune Panel.yaml")
+        'markers_immune_panel'
+    """
+    if subset_path is None:
+        return "markers_all"
+    stem = slugify(Path(subset_path).stem)
+    if not stem:
+        msg = (
+            f"--subset {subset_path}: the filename has no letters or "
+            f"digits to name the output variant folder; rename the file."
+        )
+        raise ValueError(msg)
+    return f"markers_{stem}"
 
 
 class Selection(BaseModel):

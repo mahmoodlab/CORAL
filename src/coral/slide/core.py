@@ -22,6 +22,7 @@ import numpy as np
 import xarray as xr
 import zarr
 
+from coral.config.subset import Subset, variant_name
 from coral.markers.additional import SlideStat
 from coral.slide.state import SlideState, TaskState, load_state, save_state
 from coral.slide.structure import write_structure_map
@@ -2045,28 +2046,77 @@ class CoralSlide:
         name = markers[0] if markers else "channel 0"
         return np.asarray(self.image[0]), f"Backdrop ({name})"
 
+    def _resolve_variant(
+        self,
+        subset: Any,  # noqa: ANN401 — a subset YAML path, or None
+        channels: Any,  # noqa: ANN401 — a Selection, or None for all
+        suffix: str | None,
+    ) -> tuple[Any, str]:
+        """Resolve a marker selection and the variant folder that names it.
+
+        The naming rule shared with ``coral extract``: a ``subset`` YAML is
+        named by its filename (``markers_<stem>``), no selection at all is
+        ``markers_all``. Both doors call
+        :func:`~coral.config.subset.variant_name`, so the CLI and the
+        Python API resolve the *same* folder for the same selection. A bare
+        ``channels`` selection has no filename to borrow, so it must name
+        its own variant via ``suffix``.
+
+        Args:
+            subset: Path to a subset YAML, or ``None``.
+            channels: A channel ``Selection``, or ``None``.
+            suffix: An explicit variant name; overrides the derived one.
+
+        Returns:
+            ``(selection, variant)`` — the ``Selection`` to resolve markers
+            with (``None`` = all kept markers) and the variant leaf.
+
+        Raises:
+            ValueError: If both ``subset`` and ``channels`` are given, or
+                ``channels`` is given without ``suffix``.
+        """
+        if subset is not None and channels is not None:
+            msg = (
+                f"{self._path.name}: pass either subset= (a YAML path, "
+                f"whose filename names the variant) or channels= with "
+                f"suffix=, not both."
+            )
+            raise ValueError(msg)
+        if subset is not None:
+            return Subset.from_yaml(subset).channels, (
+                suffix or variant_name(subset)
+            )
+        if channels is not None:
+            if not suffix:
+                msg = (
+                    f"{self._path.name}: channels= selects markers but does "
+                    f"not name the output variant. Pass suffix='markers_"
+                    f"<name>', or subset='<panel>.yaml' to take the name "
+                    f"from the filename (what `coral extract --subset` does)."
+                )
+                raise ValueError(msg)
+            return channels, suffix
+        return None, suffix or variant_name(None)
+
     def _feature_location(
-        self, encoder: str, slug: str, used: list[str], suffix: str | None
-    ) -> tuple[str, str, Path]:
-        """Resolve where an extractor's features for a selection live.
+        self, encoder: str, slug: str, variant: str
+    ) -> tuple[str, Path]:
+        """Resolve where an extractor's features for a variant live.
 
         The single source of truth for the ``features/<slug>/<encoder>/
         <variant>`` layout (the variant path is the feature array), so
         :meth:`encode_features` (write) and :meth:`features` (read) derive
         the same path and can never drift.
-        The variant leaf is the custom ``suffix`` verbatim, else
-        ``markers_<N>`` for the selected marker count.
 
         Args:
             encoder: The extractor's registry name (e.g. ``mean_marker``).
             slug: The patch-set slug the features belong to.
-            used: The selected marker names — its length names the variant.
-            suffix: A custom variant name, or ``None`` for ``markers_<N>``.
+            variant: The variant leaf, from :meth:`_resolve_variant`.
 
         Returns:
-            ``(variant, task_key, folder)`` — the variant leaf, the
-            ``state.json`` task key ``"<slug>/<encoder>/<variant>"``, and
-            the on-disk path where the variant's feature array lives.
+            ``(task_key, folder)`` — the ``state.json`` task key
+            ``"<slug>/<encoder>/<variant>"`` and the on-disk path where
+            the variant's feature array lives.
 
         Example:
             >>> import tempfile
@@ -2078,22 +2128,22 @@ class CoralSlide:
             ...     _ = r.create_dataset("0", data=np.zeros((1, 2, 2)))
             ...     r.attrs["mpp"] = 0.5
             ...     s = CoralSlide.open(p)
-            ...     variant, key, _ = s._feature_location(
-            ...         "mean_marker", "0.5mpp_256px", ["DAPI", "CD3"], None
+            ...     key, _ = s._feature_location(
+            ...         "mean_marker", "0.5mpp_256px", "markers_all"
             ...     )
-            ...     (variant, key)
-            ('markers_2', '0.5mpp_256px/mean_marker/markers_2')
+            ...     key
+            '0.5mpp_256px/mean_marker/markers_all'
         """
-        variant = suffix if suffix else f"markers_{len(used)}"
         task_key = f"{slug}/{encoder}/{variant}"
         folder = self._path / "features" / slug / encoder / variant
-        return variant, task_key, folder
+        return task_key, folder
 
     def encode_features(
         self,
         extractor: Any,  # noqa: ANN401 — an CoralEncoder
         config: Any,  # noqa: ANN401 — a PatchConfig identifying the set
         *,
+        subset: Any = None,  # noqa: ANN401 — a subset YAML path, or None
         channels: Any = None,  # noqa: ANN401 — a Selection, or None for all
         batch_size: int = 16,
         suffix: str | None = None,
@@ -2110,18 +2160,25 @@ class CoralSlide:
         are read as the raw box; **cell-centered** patches are isolated to
         the target cell.
 
-        Markers default to all of :attr:`markers`; a channel ``Selection``
-        selects a subset by glob. Completed sets are skipped; re-encode by
-        deleting the set or using a fresh store.
+        Markers default to all of :attr:`markers`; ``subset`` selects a
+        subset by glob, exactly as ``coral extract --subset`` does — and
+        names the variant the same way, so features written by either door
+        are read back by the other. Completed sets are skipped; re-encode
+        by deleting the set or using a fresh store.
 
         Args:
             extractor: A ``CoralEncoder`` (e.g. ``mean_marker``).
             config: The ``PatchConfig`` whose patch set to encode.
-            channels: Optional channel ``Selection`` (marker subset).
+            subset: Path to a subset YAML whose ``channels`` globs select
+                the markers; its filename names the variant
+                (``markers_<stem>``). ``None`` = every kept marker,
+                stored as ``markers_all``.
+            channels: A pre-built channel ``Selection``, for callers with
+                no YAML on disk. Requires ``suffix`` (there is no filename
+                to name the variant with) and excludes ``subset``.
             batch_size: Patches per encode call.
-            suffix: Variant-folder name nested under the encoder. Default
-                ``markers_<N>`` (selected marker count) so marker variants
-                of one encoder don't collide; a custom value is used as-is.
+            suffix: Variant-folder name nested under the encoder,
+                overriding the name derived from ``subset``.
             num_workers: Loader subprocesses reading patches ahead of the
                 forward pass. ``0`` (default) reads inline, so the GPU
                 idles during reads; raising it overlaps the two. Gains
@@ -2175,10 +2232,9 @@ class CoralSlide:
             raise ValueError(msg)
 
         name = extractor.name
-        idxs, used = self._resolve_markers(channels)
-        variant, task_key, folder_path = self._feature_location(
-            name, slug, used, suffix
-        )
+        selection, variant = self._resolve_variant(subset, channels, suffix)
+        idxs, used = self._resolve_markers(selection)
+        task_key, folder_path = self._feature_location(name, slug, variant)
 
         if folder_path.exists():
             existing = set(
@@ -2253,6 +2309,7 @@ class CoralSlide:
         extractor: Any,  # noqa: ANN401 — name str or CoralEncoder
         config: Any,  # noqa: ANN401 — a PatchConfig or its slug string
         *,
+        subset: Any = None,  # noqa: ANN401 — a subset YAML path, or None
         channels: Any = None,  # noqa: ANN401 — a Selection, or None for all
         suffix: str | None = None,
     ) -> xr.Dataset:
@@ -2269,9 +2326,10 @@ class CoralSlide:
         and wires the grid positions and provenance.
 
         Pass the **same** ``extractor`` and marker selection you extracted
-        with (``channels``/``suffix``); this resolves the stored
+        with (``subset``/``suffix``); this resolves the stored
         ``features/<slug>/<encoder>/<variant>`` array the way
-        :meth:`encode_features` wrote it. If that variant is absent, the
+        :meth:`encode_features` — or ``coral extract``, which names
+        variants identically — wrote it. If that variant is absent, the
         error lists the variants that do exist.
 
         Args:
@@ -2279,11 +2337,13 @@ class CoralSlide:
                 clean name, not the on-disk variant folder.
             config: The ``PatchConfig`` whose features to read, or its
                 already-resolved slug string.
-            channels: The channel ``Selection`` used at extraction
-                (``None`` = all markers), to resolve the ``markers_<N>``
-                variant.
-            suffix: A custom variant name if one was passed to
-                ``encode_features`` (else the ``markers_<N>`` default).
+            subset: The subset YAML used at extraction; its filename
+                resolves the ``markers_<stem>`` variant. ``None`` reads
+                ``markers_all`` (the whole kept panel).
+            channels: The pre-built ``Selection`` used at extraction.
+                Requires ``suffix`` and excludes ``subset``.
+            suffix: The variant folder name, read verbatim — use it when
+                ``encode_features`` was given one.
 
         Returns:
             ``xarray.Dataset`` — each output as a data variable with dims
@@ -2330,8 +2390,8 @@ class CoralSlide:
             base_mpp = self._mpp()
             resolved_mpp = self._resolve_patch_mpp(config.target_mpp, base_mpp)
             slug = config.resolved_slug(resolved_mpp)
-        _, used = self._resolve_markers(channels)
-        variant, _, grp_path = self._feature_location(name, slug, used, suffix)
+        _, variant = self._resolve_variant(subset, channels, suffix)
+        _, grp_path = self._feature_location(name, slug, variant)
         if not grp_path.exists():
             enc_dir = self._path / "features" / slug / name
             available = (

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -41,29 +40,6 @@ def _patch_slugs(slide_path: Path, only: str | None) -> list[str]:
     if only is not None:
         return [only] if only in slugs else []
     return slugs
-
-
-def slugify(stem: str) -> str:
-    """Normalize a filename stem to a safe variant-folder leaf.
-
-    Lowercases, collapses every run of non-alphanumeric characters into a
-    single underscore, and strips leading/trailing underscores. Returns an
-    empty string when nothing usable survives (the caller then errors,
-    rather than emitting a nameless folder).
-
-    Args:
-        stem: A filename stem (e.g. ``Path("Immune Panel.yaml").stem``).
-
-    Returns:
-        A ``[a-z0-9_]`` slug, or ``""`` if the stem has no letters/digits.
-
-    Example:
-        >>> slugify("Immune Panel.v2")
-        'immune_panel_v2'
-        >>> slugify("---")
-        ''
-    """
-    return re.sub(r"[^a-z0-9]+", "_", stem.lower()).strip("_")
 
 
 def _log_subset_selection(store: Path, channels: Any) -> None:  # noqa: ANN401
@@ -196,7 +172,7 @@ def extract(
                 --patches 0.5mpp_256px --batch-size 16
     """
     from coral.config import PatchConfig
-    from coral.config.subset import Subset
+    from coral.config.subset import Subset, variant_name
     from coral.processor import CoralProcessor
     from coral.slide import CoralSlide
 
@@ -214,7 +190,7 @@ def extract(
             f"unknown extractor {extractor!r}; have {listed_extractors()}"
         )
     channels = None
-    variant = "markers_all"
+    variant = variant_name(None)
     if subset is not None:
         from pydantic import ValidationError
 
@@ -234,13 +210,10 @@ def extract(
                 "ignored here (extract processes every store in --job-dir)."
             )
         channels = subset_obj.channels
-        stem = slugify(Path(subset).stem)
-        if not stem:
-            raise typer.BadParameter(
-                f"--subset {subset}: the filename has no letters or digits "
-                "to name the output variant folder; rename the file."
-            )
-        variant = f"markers_{stem}"
+        try:
+            variant = variant_name(subset)
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
 
     all_slides = expand_cohort_zarr_dir(job_dir)
     if not all_slides:

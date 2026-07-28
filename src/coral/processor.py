@@ -159,8 +159,10 @@ class CoralProcessor:
         encoder: Any,  # noqa: ANN401 — an CoralEncoder or a registry name
         config: Any,  # noqa: ANN401 — a PatchConfig
         *,
+        subset: Any = None,  # noqa: ANN401 — a subset YAML path, or None
         channels: Any = None,  # noqa: ANN401
         batch_size: int = 16,
+        suffix: str | None = None,
     ) -> CohortResult:
         """Encode one patch-set ``config`` across the cohort (locked loop).
 
@@ -171,8 +173,12 @@ class CoralProcessor:
             encoder: Built :class:`~coral.features.CoralEncoder` or
                 registry name.
             config: :class:`~coral.config.PatchConfig` naming the patch set.
-            channels: Optional marker selection (subset); ``None`` = all kept.
+            subset: Optional subset YAML path; its filename names the
+                variant (``markers_<stem>``). ``None`` = all kept markers
+                (``markers_all``).
+            channels: Pre-built marker ``Selection``; requires ``suffix``.
             batch_size: Patches encoded per forward pass.
+            suffix: Explicit variant-folder name, overriding ``subset``.
 
         Returns:
             :class:`CohortResult` for this encode pass.
@@ -187,8 +193,10 @@ class CoralProcessor:
             CoralSlide.open(slide_path).encode_features(
                 enc,
                 config,
+                subset=subset,
                 channels=channels,
                 batch_size=batch_size,
+                suffix=suffix,
             )
 
         return self.run(_work)
