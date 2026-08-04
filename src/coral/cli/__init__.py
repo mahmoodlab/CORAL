@@ -1,8 +1,9 @@
 """CORAL command-line interface.
 
-Six commands wired into one Typer app:
+Seven commands wired into one Typer app:
 
 - ``coral ingest <inputs>`` — Convert raw images to canonical OME-Zarr
+- ``coral ingest-wsi <qptiff>`` — Convert a qptiff whole slide to OME-Zarr
 - ``coral tissue <slides>`` — Otsu tissue detection or user-mask import
 - ``coral patch <slides>`` — Grid patch extraction
 - ``coral cell <slides>`` — Cell segmentation or user-mask import
@@ -24,6 +25,7 @@ from coral.cli import (
     cell,
     extract,
     ingest,
+    ingest_wsi,
     patch,
     status,
     tissue,
@@ -37,6 +39,10 @@ app = typer.Typer(
 app.command(name="ingest", help="Convert raw images to canonical OME-Zarr")(
     ingest.ingest
 )
+app.command(
+    name="ingest-wsi",
+    help="Convert a qptiff whole slide to OME-Zarr, optionally dearraying",
+)(ingest_wsi.ingest_wsi)
 app.command(name="tissue", help="Otsu tissue detection or user-mask import")(
     tissue.tissue
 )

@@ -472,8 +472,8 @@ def ingest(
                     channel_names=names,
                     nuclear_marker=nuclear_marker,
                     quiet=False,
+                    progress=f"[{i}/{total}] ",
                 )
-                logger.info("[%d/%d] %s ingested", i, total, item.name)
             except Exception as exc:
                 failures.append((item.name, str(exc)))
                 logger.error("[%d/%d] %s FAILED", i, total, item.name)

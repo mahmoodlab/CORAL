@@ -35,8 +35,8 @@ Everything for a slide lives in one place, and every step is resumable — stop,
 ## Will this work with my data?
 
 **Spatial proteomics:**
-- **Platforms:** CODEX / PhenoCycler, plus other multiplexed imaging platforms that export the file types below.
-- **File formats:** OME-TIFF, plain multi-page TIFF, and one-TIFF-per-channel folders (e.g. Keyence / Fusion exports).
+- **Platforms:** CODEX / PhenoCycler and Vectra Polaris / PhenoCycler-Fusion, plus other multiplexed imaging platforms that export the file types below.
+- **File formats:** OME-TIFF, plain multi-page TIFF, one-TIFF-per-channel folders (e.g. Keyence / Fusion exports), and PerkinElmer/Akoya `.qptiff` whole-slide scans (via `coral ingest-wsi`, including TMAs).
 
 ## Coming soon
 - **Spatial transcriptomics** — Xenium, Visium, Visium HD
@@ -142,7 +142,10 @@ coral --help
 ```
 
 #### Optional extras
-The base install ships the mean_marker encoder only. Foundation-model encoders and Cellpose are opt-in extras because they pull in heavy, version-pinned ML stacks. Available extras: `cells` (Cellpose segmentation), `kronos2`, `kronos1`, `uni`, `dinov2`, `eva`, `camae`.
+The base install ships the mean_marker encoder only. Foundation-model encoders and Cellpose are opt-in extras because they pull in heavy, version-pinned ML stacks. Available extras: `cells` (Cellpose segmentation), `carta` (DL tissue segmentation), `dearray` (TMA core detection), `kronos2`, `kronos1`, `uni`, `dinov2`, `eva`, `camae`.
+
+> [!NOTE]
+> The `dearray` extra pulls in `ultralytics`, which is **AGPL-3.0** — unlike the rest of CORAL. It is needed only to *detect* cores automatically. Supplying your own core boxes with `--cores-from` and cutting them out with `--export-cores` needs neither `ultralytics` nor torch.
 
 ```bash
 # uv
@@ -165,6 +168,20 @@ Each command has its own built-in help: `uv run coral <command> --help` (e.g. `u
 ```bash
 uv run coral ingest --image-dir ./demo_images --job-dir ./processed --mpp 0.37 --nuclear-marker DAPI
 ```
+
+**Step 1 (whole slides) — `coral ingest-wsi`:** for PerkinElmer/Akoya `.qptiff` whole-slide scans, use `ingest-wsi` instead. It writes the same canonical store, but reads marker names from the file's own `<Biomarker>` metadata, streams pixels one channel at a time (so a 50 GB slide never has to fit in memory), and keeps the scanner's pyramid so viewers do not decode full resolution to draw a thumbnail.
+
+```bash
+uv run coral ingest-wsi --image-dir ./scans --job-dir ./processed
+```
+
+If the slide is a tissue microarray, `--dearray` locates its cores and writes them as GeoJSON geometry inside the store — cores are *found*, not copied, so this costs seconds rather than a second write of the pixels. Add `--export-cores` to also cut each core out as its own store, or `--cores-from ./boxes` to use boxes you corrected in QuPath instead of detecting.
+
+```bash
+uv run coral ingest-wsi --image-dir ./scans --job-dir ./processed --dearray
+```
+
+Every stage skips itself when its output already exists, so re-running is how you add work to a finished job.
 
 **Step 2a — Tissue Segmentation:** separate tissue from background.
 ```bash
