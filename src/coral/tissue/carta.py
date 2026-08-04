@@ -41,6 +41,47 @@ from coral.tissue._carta.seg_scale import (
 from coral.tissue.base import BaseTissueSegmenter
 from coral.tissue.registry import register
 
+#: Black border added around the nuclear plane before segmentation, in the
+#: plane's own pixels, and cropped off afterwards.
+#:
+#: A core is a tight crop, so its tissue can sit hard against the array edge.
+#: CARTA tiles at 512 px with `overlap: 0`, and when a dimension is not a
+#: multiple of 512 the final tile is pulled flush against the edge and lands
+#: partly on top of its neighbour. In that strip two predictions are averaged;
+#: where they disagree the mean sits near the 0.5 threshold and the boundary
+#: cuts a straight line along the seam. That is the reported symptom: a
+#: boundary that suddenly breaks and overflows.
+#:
+#: Padding moves those seams off the tissue. Measured on two affected cores,
+#: running the real chain: the first lost the break where its contour ran off
+#: the bottom-left edge and went from two components to one (5.5% of pixels
+#: changed); the second lost its straight right-hand edge and its island chain
+#: became one shape (7.0% changed, coverage 0.722 -> 0.698).
+#:
+#: 300 px because that is what was tested. It is not a tuned optimum, and at
+#: 0.5 um/px it costs about 150 um of margin and a few percent of inference
+#: area. Coverage barely moves either way; the pixels that move are the ones
+#: at the boundary, which is the whole point.
+SEG_BORDER_PX: int = 300
+
+#: CORAL's minimum tissue component, overriding CARTA's 17,000 um2.
+#:
+#: This is a CORAL choice about a knob the vendored code exposes, not an edit
+#: to vendored behaviour: the dataclass default in
+#: `_carta/core_mask_cleanup.py` still reads 17,000, and CARTA run on its own
+#: is unchanged.
+#:
+#: Worth knowing: on the two cores above this changes nothing. Neither has a
+#: component between 17,000 and 50,000 um2, so 30k and 50k gave masks identical
+#: to 17k. It is here for the cores that do.
+MIN_COMPONENT_AREA_UM2: float = 40_000.0
+
+#: CARTA's cleanup with CORAL's minimum component. Built by `replace` so every
+#: other field still tracks upstream if CARTA changes it.
+CORAL_CORE_MASK_CLEANUP = replace(
+    DEFAULT_CORE_MASK_CLEANUP, min_component_area_um2=MIN_COMPONENT_AREA_UM2
+)
+
 _DEFAULT_REF = "hf_hub:MahmoodLab/CARTA"
 _WEIGHTS_FILE = "carta_tissue.pt"
 _INSTALL_MSG = (
@@ -91,6 +132,9 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
             to zero. Default ``False`` (small holes are filled).
         mask_cleanup: CARTA's µm²-based cleanup (small-component removal +
             bounded hole-fill + light closing), or ``None`` for the raw mask.
+        border_px: Black margin added around the plane before segmentation and
+            cropped off after, in the plane's own pixels. Keeps CARTA's tile
+            seams off the tissue; see :data:`SEG_BORDER_PX`. ``0`` disables it.
         region_hull: Also wrap the mask in CORAL's alpha-shape tissue region
             (the Otsu post-processing) — off by default; useful for A/B
             comparison.
@@ -117,9 +161,10 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
         model: Any = None,  # noqa: ANN401 — loaded vendored DeepLabV3Segmenter
         *,
         preserve_holes: bool = False,
-        mask_cleanup: CoreMaskCleanup | None = DEFAULT_CORE_MASK_CLEANUP,
+        mask_cleanup: CoreMaskCleanup | None = CORAL_CORE_MASK_CLEANUP,
         region_hull: bool = False,
         max_bridge_distance: float = 200.0,
+        border_px: int = SEG_BORDER_PX,
     ) -> None:
         """Store the model (if any) and the post-processing knobs."""
         self._model = model
@@ -127,6 +172,7 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
         self.preserve_holes = preserve_holes
         self.mask_cleanup = mask_cleanup
         self.region_hull = region_hull
+        self.border_px = border_px
         self.max_bridge_distance = max_bridge_distance
 
     @classmethod
@@ -136,6 +182,7 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
         *,
         preserve_holes: bool = False,
         region_hull: bool = False,
+        border_px: int = SEG_BORDER_PX,
     ) -> CartaTissueSegmenter:
         """Load the default CARTA checkpoint (the CLI build-once hook).
 
@@ -143,6 +190,7 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
             device: Torch device; ``None`` → CARTA ``auto`` (GPU if present).
             preserve_holes: See :class:`CartaTissueSegmenter`.
             region_hull: See :class:`CartaTissueSegmenter`.
+            border_px: See :class:`CartaTissueSegmenter`.
 
         Example:
             >>> seg = CartaTissueSegmenter.build()  # doctest: +SKIP
@@ -151,6 +199,7 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
             device=device,
             preserve_holes=preserve_holes,
             region_hull=region_hull,
+            border_px=border_px,
         )
 
     @classmethod
@@ -160,9 +209,10 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
         *,
         device: str | None = None,
         preserve_holes: bool = False,
-        mask_cleanup: CoreMaskCleanup | None = DEFAULT_CORE_MASK_CLEANUP,
+        mask_cleanup: CoreMaskCleanup | None = CORAL_CORE_MASK_CLEANUP,
         region_hull: bool = False,
         max_bridge_distance: float = 200.0,
+        border_px: int = SEG_BORDER_PX,
     ) -> CartaTissueSegmenter:
         """Load the vendored CARTA DeepLab model into the segmenter.
 
@@ -176,6 +226,7 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
             preserve_holes: See :class:`CartaTissueSegmenter`.
             mask_cleanup: See :class:`CartaTissueSegmenter`.
             region_hull: See :class:`CartaTissueSegmenter`.
+            border_px: See :class:`CartaTissueSegmenter`.
             max_bridge_distance: See :class:`CartaTissueSegmenter`.
 
         Returns:
@@ -227,6 +278,7 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
             preserve_holes=preserve_holes,
             mask_cleanup=mask_cleanup,
             region_hull=region_hull,
+            border_px=border_px,
             max_bridge_distance=max_bridge_distance,
         )
         obj._ref = resolved_ref
@@ -262,6 +314,7 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
             "dapi_rgb_mode": getattr(inf, "dapi_rgb_mode", "replicate"),
             "seg_um_per_px": SEG_INFERENCE_UM_PER_PX,
             "preserve_holes": self.preserve_holes,
+            "border_px": self.border_px,
             "region_hull": self.region_hull,
             "max_bridge_distance": (
                 self.max_bridge_distance if self.region_hull else None
@@ -330,7 +383,11 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
             raise RuntimeError(_LOAD_MSG)
         arr = np.asarray(image)
         nuclear = arr[0] if arr.ndim == 3 else arr
-        crop_seg = resample_to_seg_scale(nuclear, mpp)
+        # Padded with black before the resample, cropped after. See
+        # `border_px` for what this fixes and how it was measured.
+        pad = max(0, int(self.border_px))
+        padded = np.pad(nuclear, pad, constant_values=0) if pad else nuclear
+        crop_seg = resample_to_seg_scale(padded, mpp)
         mask_seg = np.asarray(self._model.segment(crop_seg), dtype=bool)
         cleaned, _stats = apply_core_mask_cleanup(
             mask_seg, self._effective_cleanup()
@@ -343,9 +400,10 @@ class CartaTissueSegmenter(BaseTissueSegmenter):
                 SEG_INFERENCE_UM_PER_PX,
                 max_bridge_um=self.max_bridge_distance,
             )
-        return np.asarray(
-            mask_seg_to_native(cleaned, nuclear.shape[:2]), dtype=bool
+        native = np.asarray(
+            mask_seg_to_native(cleaned, padded.shape[:2]), dtype=bool
         )
+        return native[pad:-pad, pad:-pad] if pad else native
 
     def segment(self, image: np.ndarray, mpp: float = 1.0) -> np.ndarray:
         """Run :meth:`preprocess` then :meth:`forward` at ``mpp``.

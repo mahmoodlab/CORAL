@@ -83,6 +83,24 @@ carta = [
     "torchvision>=0.15",
     "huggingface-hub>=0.34",
 ]
+# TMA dearraying — CARTA's YOLO core detector, vendored into
+# coral.dearray._carta. Opt-in: `uv sync --extra dearray` /
+# `pip install coral[dearray]`. Weights come from the public HF repo
+# MahmoodLab/CARTA (carta_core.pt), or a local .pt via CARTA_CORE_WEIGHTS.
+#
+# NOTE ON LICENSING: ultralytics is AGPL-3.0 and nothing else in CORAL's tree
+# is. It is a dependency rather than vendored code, and it is needed only to
+# DETECT cores: `coral ingest-wsi --cores-from <dir>` takes boxes you already
+# have (QuPath corrections, or your own tooling), and `--export-cores` cuts
+# them out, with neither path importing ultralytics or torch. So the AGPL is
+# on the automatic-detection path alone. Also pulls the `carta` extra's torch,
+# which plain ingest does not need.
+dearray = [
+    "ultralytics>=8.3",
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "huggingface-hub>=0.34",
+]
 # KRONOS2 feature extractor (sprint 10) — heavy + version-locked. The four
 # numeric deps are pinned EXACTLY (overriding CORAL's usual liberal pinning):
 # KRONOS2 embeddings are bit-exact to the gold standard only on this stack
@@ -206,6 +224,7 @@ extend-exclude = [
     "src/coral/features/_eva",
     "src/coral/features/_kronos1",
     "src/coral/tissue/_carta",
+    "src/coral/dearray/_carta",
 ]
 
 [tool.ruff.lint]
@@ -254,6 +273,7 @@ addopts = [
     "--ignore=src/coral/features/_eva",  # vendored: torch-importing, not collected
     "--ignore=src/coral/features/_kronos1",  # vendored: torch-importing, not collected
     "--ignore=src/coral/tissue/_carta",  # vendored: torch-importing, not collected
+    "--ignore=src/coral/dearray/_carta",  # vendored: torch-importing, not collected
     "--cov=coral",
     "--cov-report=term-missing",
 ]
@@ -283,6 +303,7 @@ omit = [
     "src/coral/features/_eva/*",  # vendored third-party code (Apache-2.0)
     "src/coral/features/_kronos1/*",  # vendored third-party code (Apache-2.0)
     "src/coral/tissue/_carta/*",  # vendored third-party code (CARTA, CC-BY-4.0)
+    "src/coral/dearray/_carta/*",  # vendored third-party code (CARTA, CC-BY-4.0)
 ]
 
 [tool.coverage.report]

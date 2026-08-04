@@ -16,8 +16,18 @@ from pathlib import Path
 from coral.slide.state import SlideState, TaskState, load_state
 
 # Order the cohort table + summary rollup present stages in.
-STAGES = ("ingest", "tissue", "patch", "cells", "extract")
+STAGES = ("ingest", "dearray", "tissue", "patch", "cells", "extract")
 _SCALAR_STAGES = frozenset({"ingest", "cells"})
+
+
+def _is_core(state: SlideState) -> bool:
+    """Whether this store was cut out of a slide rather than ingested.
+
+    Read from the ``source_format`` the export writes into ``state.meta``,
+    which is the only place a core says what it is: its store attributes are
+    deliberately identical to any other slide's.
+    """
+    return getattr(state.meta, "source_format", None) == "core"
 
 
 @dataclass
@@ -97,10 +107,10 @@ def collapse_stage(state: SlideState, stage: str) -> StageCell:
     """Collapse a stage's task(s) into one status cell.
 
     Scalar stages (ingest/cells) map straight through with their
-    duration. Dict stages (tissue/patch/extract) roll many sub-tasks into
-    one status — ``error`` if any failed, else ``running`` if any is live,
-    else ``completed`` only when all are, else ``pending`` — and carry the
-    sub-task count plus the first failure reason.
+    duration. Dict stages (dearray/tissue/patch/extract) roll many
+    sub-tasks into one status: ``error`` if any failed, else ``running`` if
+    any is live, else ``completed`` only when all are, else ``pending``. They
+    carry the sub-task count plus the first failure reason.
 
     Args:
         state: The slide's loaded :class:`SlideState`.
@@ -126,6 +136,12 @@ def collapse_stage(state: SlideState, stage: str) -> StageCell:
         )
     entries: dict[str, TaskState] = getattr(tasks, stage)
     if not entries:
+        # A core is the OUTPUT of dearray and can never be a candidate for it,
+        # so "pending" would be a lie: nothing is queued and nothing ever will
+        # be. "skipped" already means deliberately not run. The column stays,
+        # because a blank cell says less than a dot that means something.
+        if stage == "dearray" and _is_core(state):
+            return StageCell(status="skipped", count=0)
         return StageCell(status="pending", count=0)
     statuses = [t.status for t in entries.values()]
     if "error" in statuses:

@@ -41,9 +41,21 @@ __all__ = [
 def mask_to_geopandas(mask: np.ndarray) -> gpd.GeoDataFrame:
     """Trace a boolean level-0 mask into polygons (level-0 coordinates).
 
-    One row per tissue region — a ``tissue_id`` and a ``geometry``
-    polygon in level-0 pixel space. Holes are not modelled separately:
-    the alpha-shape tissue region is already hole-free.
+    One row per tissue region — a ``tissue_id`` and a ``geometry`` polygon in
+    level-0 pixel space. **A hole becomes an interior ring of the region that
+    contains it**, so the mask can be recovered from the polygons.
+
+    That last part used to be untrue and it mattered. ``find_contours`` returns
+    every boundary flat, with no hierarchy: the outside of a region and the
+    inside of a hole look the same to it. Each became its own polygon, and
+    :func:`read_tissue_geojson_mask` fills every polygon it is given, so a hole
+    came back as tissue. Measured on a real CARTA core: 39.8% coverage written,
+    42.9% read back, 312,042 hole pixels turned solid. Anything doing that
+    round trip silently lost its holes.
+
+    Nesting is by the even-odd rule, which is what a set of nested boundaries
+    means: a contour inside an odd number of others is a hole, inside an even
+    number it is tissue again — an island in a lake.
 
     Args:
         mask: Boolean ``(y, x)`` tissue mask at level 0.
@@ -60,12 +72,22 @@ def mask_to_geopandas(mask: np.ndarray) -> gpd.GeoDataFrame:
         1
         >>> bool(gdf.geometry.iloc[0].is_valid)
         True
+
+        A region with a hole is one polygon with one interior ring, and it
+        survives a round trip through the reader:
+
+        >>> holed = np.zeros((40, 40), dtype=bool)
+        >>> holed[5:35, 5:35] = True
+        >>> holed[15:25, 15:25] = False
+        >>> gdf = mask_to_geopandas(holed)
+        >>> len(gdf), len(gdf.geometry.iloc[0].interiors)
+        (1, 1)
     """
     # Pad a False border so find_contours also traces boundaries that run
     # along the image edge — a frame-filling (all-True) mask otherwise
     # yields no contour — then shift the coords back by the 1px pad.
     padded = np.pad(np.asarray(mask, dtype=bool), 1).astype(float)
-    polygons = []
+    rings = []
     for contour in measure.find_contours(padded, level=0.5):
         if len(contour) < 4:
             continue
@@ -74,12 +96,74 @@ def mask_to_geopandas(mask: np.ndarray) -> gpd.GeoDataFrame:
         polygon = Polygon(yx[:, [1, 0]])
         if not polygon.is_valid:
             polygon = make_valid(polygon)
-        if not polygon.is_empty:
-            polygons.append(polygon)
+        if not polygon.is_empty and hasattr(polygon, "exterior"):
+            rings.append(polygon)
+
+    # An empty LIST, never None. `geometry=None` leaves the frame without an
+    # active geometry column, and every geospatial method on it then raises;
+    # a core with no detectable tissue is an ordinary outcome and has to
+    # produce an ordinary empty frame. Nested once, not twice.
+    regions = _nest(rings)
     return gpd.GeoDataFrame(
-        {"tissue_id": list(range(len(polygons)))},
-        geometry=polygons,
+        {"tissue_id": list(range(len(regions)))},
+        geometry=regions,
     )
+
+
+def _nest(rings: list[Polygon]) -> list[Polygon]:
+    """Assemble flat boundary rings into polygons with holes.
+
+    Each ring's depth is how many other rings contain it. Even depth is an
+    outer boundary, odd depth is a hole in the ring immediately containing it.
+
+    Containment is tested with a representative point rather than
+    ``contains``, because traced boundaries touch: a hole's ring shares pixels
+    with the region around it, and a strict containment test drops the pairing
+    that matters.
+
+    Args:
+        rings: One polygon per traced boundary, holes included.
+
+    Returns:
+        One polygon per tissue region, each carrying its own holes.
+    """
+    if not rings:
+        return []
+
+    # Largest first, so a ring's parent is always found before the ring is
+    # used as anyone else's parent.
+    order = sorted(
+        range(len(rings)), key=lambda i: rings[i].area, reverse=True
+    )
+    parent: dict[int, int | None] = {}
+    depth: dict[int, int] = {}
+
+    for pos, i in enumerate(order):
+        point = rings[i].representative_point()
+        found = None
+        # The smallest enclosing ring is the immediate parent, and because the
+        # list is ordered by decreasing area the last match is the smallest.
+        for j in order[:pos]:
+            if rings[j].contains(point):
+                found = j
+        parent[i] = found
+        depth[i] = 0 if found is None else depth[found] + 1
+
+    out: list[Polygon] = []
+    for i in order:
+        if depth[i] % 2:
+            continue  # A hole; it belongs to its parent.
+        holes = [
+            rings[j].exterior.coords
+            for j in order
+            if parent.get(j) == i and depth[j] % 2
+        ]
+        polygon = Polygon(rings[i].exterior.coords, holes)
+        if not polygon.is_valid:
+            polygon = make_valid(polygon)
+        if not polygon.is_empty:
+            out.append(polygon)
+    return out
 
 
 def render_tissue_overlay(

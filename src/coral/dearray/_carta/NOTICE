@@ -1,0 +1,36 @@
+CARTA TMA core-detection code (vendored into CORAL), inference only
+==================================================================
+
+This directory (`coral.dearray._carta`) contains a vendored copy of the **core
+detection** code from the CARTA project's `segmenter` package. Its sibling
+`coral.tissue._carta` vendors the same project's tissue segmenter.
+
+    Upstream : CARTA (`segmenter/`)
+    License  : Creative Commons Attribution 4.0 International (CC BY 4.0)
+    Copyright: (c) 2026 CARTA contributors
+    See      : ./LICENSE
+
+It is embedded here so CORAL can dearray a TMA without taking a dependency on the
+(private) CARTA repository, mirroring how `coral.tissue._carta`,
+`coral.features._eva` and `coral.features._kronos1` vendor their upstream code.
+
+Files copied with small, documented edits (see coral/dearray/_carta/__init__.py):
+    detect.py       - from e2e_pipeline.py. Kept the YOLO box detection and the
+                      box bookkeeping around it. _load_review_boxes became
+                      prepare_review_boxes, taking boxes rather than reading
+                      GeoJSON, because CORAL reads corrections through its own
+                      path; print diagnostics go through a logger. Core-map
+                      rendering, bundle writing and provenance are not vendored,
+                      nor is load_core_boxes_from_geojson.
+    detect_scale.py - from core_detection_scale.py. Renamed prepare_slide_rgb to
+                      prepare_detector_rgb. Dropped the deprecated FIXED_NORM_LO
+                      / FIXED_NORM_HI constants and CARTA's per-cohort um/px
+                      constants. The remap_boxes_* functions keep their upstream
+                      names; note they are scale-agnostic, and CORAL feeds them a
+                      reduced pyramid level rather than level 0.
+
+Only the core-detection inference path is vendored. NO training or loss code.
+CARTA's QuPath human-in-the-loop code (qupath_hitl.py), its per-core OME export,
+its bundle writers and its end-to-end pipeline are not included. The tissue
+segmenter is not vendored again either: it already lives in coral.tissue._carta,
+and the CORAL adaptation of split_yolo calls it.

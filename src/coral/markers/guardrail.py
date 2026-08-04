@@ -89,11 +89,20 @@ def enforce_marker_map(
 
     map_df = read_marker_map(job_dir)
     if map_df is None:
-        # No map to apply — each slide's stored marker names stand. This
-        # happens only outside the normal flow (ingest always writes one).
+        # No map to apply — each slide's stored marker names stand, and they
+        # are the names the ingest resolved, so the run is correct. What is
+        # lost is the ability to rename a marker or un-keep a channel for the
+        # whole job dir at once.
+        #
+        # It used to say "run 'coral ingest' to regenerate the map", which
+        # cannot be done: the stores here are OME-Zarr and ingest reads source
+        # images. That is the wrong advice for every zarr-only job dir,
+        # exported cores included.
         logger.warning(
-            "no marker_map.csv in %s — using each slide's stored marker "
-            "names (run 'coral ingest' to regenerate the map).",
+            "no marker_map.csv in %s — using each store's own marker names. "
+            "They are correct, but nothing here can rename a marker or "
+            "un-keep a channel across the whole job dir. Copy the map from "
+            "the job dir these stores came from to get that back.",
             job_dir,
         )
         return {}
