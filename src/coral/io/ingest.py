@@ -68,6 +68,12 @@ Resolution = dict[str, tuple[str, MatchStatus, bool]]
 # faster ingest than 512, with only a modest patch-read cost.
 _CHUNK_TILE = 1024
 
+# OME-NGFF metadata version written into `multiscales`. Zarr format 2
+# carries the OME keys flat in .zattrs, which is NGFF 0.4; NGFF 0.5 nests
+# them under an "ome" key and requires zarr format 3, which Bio-Formats
+# cannot yet read and therefore QuPath cannot open.
+_NGFF_VERSION = "0.4"
+
 # Integer factor the nuclear thumbnail is downsampled by. The thumbnail is
 # a review-only preview (not a data product), so it renders at
 # 1/_THUMBNAIL_DOWNSAMPLE resolution — fewer pixels to percentile-stretch
@@ -254,6 +260,7 @@ def _resolve_mpp(
     source_mpp: float | None,
     mpp_map: dict[str, float] | None = None,
     mpp_global: float | None = None,
+    level: int = 0,
 ) -> float:
     """Resolve a slide's microns-per-pixel by precedence.
 
@@ -266,6 +273,11 @@ def _resolve_mpp(
         source_mpp: Microns-per-pixel found in the source (may be None).
         mpp_map: Per-image overrides keyed by image entry name.
         mpp_global: Single fallback value applied to every image.
+        level: Pyramid level the value describes. The plausibility range
+            doubles per level, because a pixel at level 3 really is 8x
+            wider and warning about that reads as a metadata fault when
+            it is arithmetic. ``coral ingest`` writes level 0 and does
+            not pass this.
 
     Returns:
         The resolved microns-per-pixel.
@@ -284,15 +296,18 @@ def _resolve_mpp(
             f"no mpp for {image_name!r}: the source carries none and "
             f"neither --mpp nor a --mpp-csv entry was provided"
         )
-    if not _MPP_PLAUSIBLE_MIN <= value <= _MPP_PLAUSIBLE_MAX:
+    scale = float(2**level)
+    low, high = _MPP_PLAUSIBLE_MIN * scale, _MPP_PLAUSIBLE_MAX * scale
+    if not low <= value <= high:
         logger.warning(
             "%s: resolved mpp %.4g um/px is outside the plausible range "
-            "[%.2g, %.2g] — check the source metadata or --mpp; "
-            "morphology + scalebars depend on it.",
+            "[%.2g, %.2g] for level %d — check the source metadata or "
+            "--mpp; morphology + scalebars depend on it.",
             image_name,
             value,
-            _MPP_PLAUSIBLE_MIN,
-            _MPP_PLAUSIBLE_MAX,
+            low,
+            high,
+            level,
         )
     return value
 
@@ -628,8 +643,70 @@ def _resolve_nuclear_channel(
 # NGFF omero display defaults — do not scan pixels. Window end is a
 # conservative uint16 fluorescence display range (IDR-style); QuPath's
 # B&C dialog can still auto-adjust. Nuclear channel starts active only.
+#: How many channels a freshly written store suggests showing.
+_DEFAULT_ACTIVE_CHANNELS = 4
+
+#: Fallback display ceiling when the dtype is unknown.
 _OMERO_WINDOW_MAX = 65535.0
+#: Fallback display end for an integer type whose pixels were not measured.
 _OMERO_WINDOW_END = 4096.0
+
+#: Percentiles the measured display window is taken from. The low end trims
+#: detector offset, the high end trims the handful of saturated specks that
+#: otherwise drag the whole range and leave real signal near black.
+_WINDOW_PERCENTILES = (1.0, 99.5)
+
+
+def _dtype_window_max(dtype: np.dtype | None) -> float:
+    """Largest value the display range can meaningfully reach for a dtype.
+
+    This was hardcoded to 65535 whatever the pixels were. A uint8 store then
+    told every reader its range was 0-65535 with a display end of 4096, so
+    data peaking at 255 rendered at about 6% brightness — near black in
+    QuPath and napari. Anything that looked right was ignoring `omero`.
+    """
+    if dtype is None:
+        return _OMERO_WINDOW_MAX
+    kind = np.dtype(dtype)
+    if kind.kind in "ui":
+        return float(np.iinfo(kind).max)
+    # Floats have no meaningful ceiling; 1.0 is the usual normalised range.
+    return 1.0
+
+
+def _measured_window(plane: np.ndarray) -> tuple[float, float] | None:
+    """A display window from a plane's own pixels, or ``None`` if degenerate.
+
+    Percentiles rather than min/max, for the reason in
+    :data:`_WINDOW_PERCENTILES`. A constant or empty plane has no window
+    worth writing, and returning ``None`` lets the caller fall back rather
+    than store a range that renders as a solid block.
+    """
+    data = np.asarray(plane)
+    if data.size == 0:
+        return None
+    low, high = (float(v) for v in np.percentile(data, _WINDOW_PERCENTILES))
+    if not np.isfinite(low) or not np.isfinite(high) or high <= low:
+        return None
+    return low, high
+
+
+def _rgb_to_hex(rgb: str | None) -> str | None:
+    """A vendor ``"r,g,b"`` string as omero's ``"RRGGBB"``, or ``None``."""
+    if not rgb:
+        return None
+    parts = [p.strip() for p in str(rgb).split(",")]
+    if len(parts) != 3:
+        return None
+    try:
+        values = [int(p) for p in parts]
+    except ValueError:
+        return None
+    if not all(0 <= v <= 255 for v in values):
+        return None
+    return "".join(f"{v:02X}" for v in values)
+
+
 _OMERO_COLORS = (
     "0000FF",  # blue — typical nuclear
     "00FF00",
@@ -675,48 +752,142 @@ def _write_ome_metadata_xml(
     mpp: float,
     shape_cyx: tuple[int, int, int],
     dtype: np.dtype,
+    source: dict[str, Any] | None = None,
 ) -> None:
     """Write ``OME/METADATA.ome.xml`` for Bio-Formats / QuPath.
 
     Channel ``Name`` and ``PhysicalSizeX/Y`` are what QuPath surfaces as
     channel names and micron pixel size. Pixels are not touched.
+
+    Args:
+        store_path: The slide ``.zarr`` store directory.
+        markers: Resolved channel names, one per channel axis.
+        mpp: Microns per pixel of the stored level 0.
+        shape_cyx: The stored level-0 ``(c, y, x)`` shape.
+        dtype: Pixel dtype.
+        source: A ``source_qptiff`` record. ``None`` (what ``coral
+            ingest`` passes, since an array source has nothing more to
+            give) writes exactly the minimal document it always has;
+            a record adds acquisition date, instrument, and per-channel
+            optics and exposure.
     """
-    from xml.sax.saxutils import escape
+    from xml.sax.saxutils import quoteattr
+
+    from coral.io.ome_xml import (
+        channel_element,
+        instrument_block,
+        ome_datetime,
+        plane_elements,
+    )
 
     size_c, size_y, size_x = (int(v) for v in shape_cyx)
     pix_type, sig_bits = _ome_pixel_type(dtype)
     mpp_f = float(mpp)
+    record = source or {}
+    source_channels = record.get("channels") or []
     channels_xml = "\n".join(
-        f'      <Channel ID="Channel:0:{i}" Name="{escape(str(name))}" '
-        f'SamplesPerPixel="1"/>'
+        channel_element(
+            i,
+            name,
+            source_channels[i] if i < len(source_channels) else None,
+        )
         for i, name in enumerate(markers)
     )
-    xml = (
-        '<?xml version="1.0" encoding="UTF-8"?>\n'
+    # Schema order: Instrument before Image, and inside Pixels it is
+    # Channel* then TiffData then Plane*. Right values in the wrong order
+    # is still an invalid document.
+    acquired = ome_datetime(
+        (record.get("acquisition") or {}).get("datetime_tiff")
+    )
+    image_name = (record.get("slide") or {}).get("SlideID") or "0"
+    instrument = instrument_block(record) if record else ""
+
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
         f'<OME xmlns="{_OME_XML_NS}" '
         'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
-        'xsi:schemaLocation="'
-        f"{_OME_XML_NS} "
-        f'{_OME_XML_NS}/ome.xsd">\n'
-        '  <Image ID="Image:0" Name="0">\n'
+        f'xsi:schemaLocation="{_OME_XML_NS} {_OME_XML_NS}/ome.xsd">',
+    ]
+    if instrument:
+        lines.append(instrument.rstrip("\n"))
+    lines.append(f'  <Image ID="Image:0" Name={quoteattr(str(image_name))}>')
+    if acquired:
+        lines.append(f"    <AcquisitionDate>{acquired}</AcquisitionDate>")
+    if instrument:
+        lines.append('    <InstrumentRef ID="Instrument:0"/>')
+    lines.append(
         '    <Pixels BigEndian="false" DimensionOrder="XYCZT" '
         'ID="Pixels:0" Interleaved="false" '
         f'SignificantBits="{sig_bits}" '
         f'PhysicalSizeX="{mpp_f}" PhysicalSizeXUnit="µm" '
         f'PhysicalSizeY="{mpp_f}" PhysicalSizeYUnit="µm" '
         f'SizeC="{size_c}" SizeT="1" SizeX="{size_x}" '
-        f'SizeY="{size_y}" SizeZ="1" Type="{pix_type}">\n'
-        f"{channels_xml}\n"
-        f'      <TiffData FirstC="0" FirstT="0" FirstZ="0" '
-        f'PlaneCount="{size_c}"/>\n'
-        "    </Pixels>\n"
-        "  </Image>\n"
-        "</OME>\n"
+        f'SizeY="{size_y}" SizeZ="1" Type="{pix_type}">'
     )
+    lines.append(channels_xml)
+    lines.append(
+        f'      <TiffData FirstC="0" FirstT="0" FirstZ="0" '
+        f'PlaneCount="{size_c}"/>'
+    )
+    planes = plane_elements(source_channels).rstrip("\n")
+    if planes:
+        lines.append(planes)
+    lines += ["    </Pixels>", "  </Image>", "</OME>"]
+    xml = "\n".join(lines) + "\n"
     ome_dir = store_path / "OME"
     ome_dir.mkdir(parents=True, exist_ok=True)
     (ome_dir / ".zgroup").write_text('{"zarr_format": 2}\n')
     (ome_dir / "METADATA.ome.xml").write_text(xml)
+
+
+def _ngff_datasets(
+    mpp: float, level_shapes: list[tuple[int, int, int]] | None
+) -> list[dict[str, Any]]:
+    """One NGFF ``datasets`` entry per stored pyramid level.
+
+    NGFF 0.4 requires the entries be ordered highest resolution first, and
+    each level's transformation maps that level's own indices to physical
+    space. So the scale is the **absolute** micron size of a pixel at that
+    level, not a factor relative to level 0.
+
+    The downsample factor is measured from each level's real height rather
+    than assumed to be ``2 ** i``. Scanners round: a 28800-row level 0 with
+    a 1800-row level 4 is exactly 16x, but an odd-sized source is not, and
+    a scale bar drawn from an assumed factor would be quietly wrong.
+
+    Args:
+        mpp: Microns per pixel of the stored level 0.
+        level_shapes: ``(c, y, x)`` per stored level, level 0 first. A
+            single-level store when ``None``.
+
+    Returns:
+        NGFF 0.4 ``datasets`` entries, one per level, largest first.
+
+    Example:
+        A half-size second level doubles the micron size of a pixel::
+
+            >>> ds = _ngff_datasets(0.25, [(3, 100, 80), (3, 50, 40)])
+            >>> [d["path"] for d in ds]
+            ['0', '1']
+            >>> [d["coordinateTransformations"][0]["scale"][1] for d in ds]
+            [0.25, 0.5]
+    """
+    mpp_f = float(mpp)
+    shapes = level_shapes or [(0, 1, 1)]
+    base_y = float(shapes[0][1])
+    entries = []
+    for i, shape in enumerate(shapes):
+        factor = base_y / float(shape[1]) if shape[1] else 1.0
+        step = mpp_f * factor
+        entries.append(
+            {
+                "path": str(i),
+                "coordinateTransformations": [
+                    {"type": "scale", "scale": [1.0, step, step]},
+                ],
+            }
+        )
+    return entries
 
 
 def _write_ngff_external_attrs(
@@ -725,41 +896,48 @@ def _write_ngff_external_attrs(
     mpp: float,
     *,
     nuclear_marker: str | None = None,
+    level_shapes: list[tuple[int, int, int]] | None = None,
+    source: dict[str, Any] | None = None,
+    dtype: np.dtype | None = None,
+    windows: dict[int, tuple[float, float]] | None = None,
+    channel_colors: dict[int, str] | None = None,
 ) -> None:
-    """Write additive OME-NGFF 0.4 attrs for external readers (QuPath).
+    """Write additive OME-Zarr 0.5 attrs for external readers (QuPath).
 
-    Sets ``multiscales`` (axes ``c,y,x`` + level-0 scale), ``omero``
-    (labels / display), and ``OME/METADATA.ome.xml`` (channel names +
-    PhysicalSize for Bio-Formats). Does not touch CORAL custom attrs or
-    pixel data.
+    Sets ``ome.multiscales`` (axes ``c,y,x`` + a scale per stored level),
+    ``omero`` (labels / display), and ``OME/METADATA.ome.xml`` (channel
+    names + PhysicalSize for Bio-Formats). Does not touch CORAL custom
+    attrs or pixel data.
 
     Args:
         root: Open zarr group for the slide store.
         markers: Display labels, one per channel axis.
-        mpp: Isotropic microns-per-pixel for the y/x scale transform.
+        mpp: Isotropic microns-per-pixel of the stored level 0.
         nuclear_marker: Channel label to mark ``active`` in omero (others
             off). When ``None``, channel 0 is active.
+        level_shapes: ``(c, y, x)`` per stored pyramid level, level 0
+            first. ``None`` (the default, and what ``coral ingest``
+            passes) describes the single ``"0"`` dataset, leaving that
+            command's output unchanged.
+        source: A ``source_qptiff`` record, forwarded to the OME-XML
+            writer. ``None`` keeps the minimal document.
+        dtype: Pixel dtype, which sets the omero display ceiling. ``None``
+            keeps the old uint16 assumption.
+        windows: Measured ``{channel: (start, end)}`` display windows.
+            Channels absent from it get the unmeasured default.
+        channel_colors: ``{channel: "RRGGBB"}`` from the source, overriding
+            the rotating palette where present.
     """
     mpp_f = float(mpp)
-    root.attrs["multiscales"] = [
+    multiscales = [
         {
-            "version": "0.4",
+            "version": _NGFF_VERSION,
             "axes": [
                 {"name": "c", "type": "channel"},
                 {"name": "y", "type": "space", "unit": "micrometer"},
                 {"name": "x", "type": "space", "unit": "micrometer"},
             ],
-            "datasets": [
-                {
-                    "path": "0",
-                    "coordinateTransformations": [
-                        {
-                            "type": "scale",
-                            "scale": [1.0, mpp_f, mpp_f],
-                        },
-                    ],
-                }
-            ],
+            "datasets": _ngff_datasets(mpp_f, level_shapes),
         }
     ]
     nuclear_key = (nuclear_marker or "").strip().lower()
@@ -769,25 +947,41 @@ def _write_ngff_external_attrs(
             if str(name).strip().lower() == nuclear_key:
                 active_idx = i
                 break
-    root.attrs["omero"] = {
+    # The nuclear stain plus the first few markers. Only the nuclear channel
+    # was marked active, which leaves a viewer opening a 29-channel store
+    # with no guidance and forces it to invent a default of its own.
+    active_set = {active_idx}
+    for i in range(len(markers)):
+        if len(active_set) >= _DEFAULT_ACTIVE_CHANNELS:
+            break
+        active_set.add(i)
+    window_max = _dtype_window_max(dtype)
+    default_end = min(_OMERO_WINDOW_END, window_max)
+    omero = {
         "channels": [
             {
                 "label": name,
-                "color": _OMERO_COLORS[i % len(_OMERO_COLORS)],
-                "active": i == active_idx,
+                # The acquisition's own colour where the source recorded one.
+                # Overwriting it with a rotating palette threw away the one
+                # channel-to-colour mapping the microscope actually asserted.
+                "color": (channel_colors or {}).get(i)
+                or _OMERO_COLORS[i % len(_OMERO_COLORS)],
+                "active": i in active_set,
                 "coefficient": 1.0,
                 "family": "linear",
                 "inverted": False,
                 "window": {
                     "min": 0.0,
-                    "max": _OMERO_WINDOW_MAX,
-                    "start": 0.0,
-                    "end": _OMERO_WINDOW_END,
+                    "max": window_max,
+                    "start": (windows or {}).get(i, (0.0, default_end))[0],
+                    "end": (windows or {}).get(i, (0.0, default_end))[1],
                 },
             }
             for i, name in enumerate(markers)
         ]
     }
+    root.attrs["multiscales"] = multiscales
+    root.attrs["omero"] = omero
 
     # Bio-Formats / QuPath: names + micron scale come from OME-XML.
     if "0" in root:
@@ -806,6 +1000,7 @@ def _write_ngff_external_attrs(
                 mpp_f,
                 shape_cyx=(shape[0], shape[1], shape[2]),
                 dtype=np.dtype(arr.dtype),
+                source=source,
             )
 
 
@@ -872,11 +1067,22 @@ def _write_canonical_zarr(
         (m if m else (ch.raw or f"channel_{i}"))
         for i, (m, ch) in enumerate(zip(markers, channels, strict=True))
     ]
+    # The array is already in memory here, so display windows are measured
+    # from the pixels rather than guessed. Sub-sampled every tenth row and
+    # column: the percentiles are the same, for a hundredth of the work.
+    sample = image[:, ::10, ::10]
+    windows = {}
+    for i in range(int(image.shape[0])):
+        measured = _measured_window(sample[i])
+        if measured:
+            windows[i] = measured
     _write_ngff_external_attrs(
         root,
         omero_labels,
         mpp,
         nuclear_marker=markers[nuclear_idx],
+        dtype=np.dtype(image.dtype),
+        windows=windows,
     )
     if source_pyramid_levels > 1:
         logger.warning(
@@ -995,11 +1201,14 @@ def apply_marker_names(
         (m if m else (ch.raw or f"channel_{i}"))
         for i, (m, ch) in enumerate(zip(markers, channels, strict=True))
     ]
+    # No pixel re-read on this path, so the windows cannot be re-measured;
+    # the dtype ceiling is still corrected rather than left at uint16.
     _write_ngff_external_attrs(
         root,
         omero_labels,
         float(root.attrs["mpp"]),
         nuclear_marker=nuclear_name,
+        dtype=np.dtype(root["0"].dtype) if "0" in root else None,
     )
     logger.debug("%s: re-applied marker names (no pixel re-read)", path.name)
 
@@ -1030,6 +1239,7 @@ def convert_to_canonical(
     channel_names: list[str] | None = None,
     nuclear_marker: str | None = None,
     quiet: bool = False,
+    progress: str = "",
 ) -> CoralSlide:
     """Ingest one image into a canonical OME-Zarr slide store.
 
@@ -1068,9 +1278,10 @@ def convert_to_canonical(
             the embedded names.
         nuclear_marker: Force the nuclear channel by marker name; ``None``
             auto-infers.
-        quiet: If True, skip per-image progress log lines (shape / nuclear
-            summary). The CLI leaves this False so each image prints its
-            details, then ``[i/N] <name> ingested``.
+        quiet: If True, skip the per-image summary line (shape, mpp,
+            nuclear channel, destination store).
+        progress: Prefix for that line, e.g. ``"[2/9] "``. The caller owns the
+            counter because only it knows how many images there are.
 
     Returns:
         An open ``CoralSlide`` handle to the written canonical store.
@@ -1152,9 +1363,13 @@ def convert_to_canonical(
         else markers[nuclear_idx]
     )
     if not quiet:
+        # One line per image, and the counter rides on it. It used to be two:
+        # this line, then "[1/3] name ingested" underneath, saying nothing the
+        # first had not. The second was cut and the counter moved here.
         logger.info(
-            "  %s: shape (c,y,x)=(%d, %d, %d), mpp %.4g (%s); "
+            "%s%s: shape (c,y,x)=(%d, %d, %d), mpp %.4g (%s); "
             "nuclear=%s (%s) -> %s",
+            progress,
             path.name,
             len(channels),
             int(image.shape[1]),

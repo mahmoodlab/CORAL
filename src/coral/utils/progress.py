@@ -21,10 +21,13 @@ from tqdm.std import tqdm
 
 __all__ = [
     "activate_bar",
+    "bar_note",
     "bar_status",
     "bar_write",
+    "channel_bar",
     "get_active_bar",
     "per_image_bar",
+    "writing_channel",
 ]
 
 _active_bar: ContextVar[Any | None] = ContextVar(
@@ -152,3 +155,63 @@ def activate_bar(pbar: Any) -> Iterator[Any]:  # noqa: ANN401
         _active_bar.reset(token)
         desc = getattr(pbar, "desc", None) or "done"
         _finish_bar(pbar, desc=str(desc), fill=True)
+
+
+@contextmanager
+def channel_bar(
+    *,
+    desc: str,
+    total: int,
+    unit: str = "ch",
+    leave: bool = True,
+    position: int = 0,
+    disable: bool | None = None,
+) -> Iterator[Any]:
+    """One bar over the channels of one pyramid level.
+
+    Replaces a line per channel per level. A 29-channel slide with six
+    levels is 174 log lines saying nothing but a number, which buries the
+    lines that matter; one bar per level says the same thing in one line
+    that moves.
+
+    The caller names the channel it is about to write with
+    :func:`writing_channel`, so a stalled write shows which channel it
+    stalled on. That is the whole reason the per-channel line existed.
+
+    Not :func:`per_image_bar`: that one owns the ``_active_bar``
+    contextvar so a stage can post its result, and a level bar is inner
+    work that must not displace an outer stage's bar.
+
+    ``leave=False`` with ``position=1`` makes an inner bar transient
+    under an outer one, which is what a per-level bar wants when there
+    are fifty-six cores: the levels scroll past on one line and only the
+    core count is left behind.
+
+    Example:
+        >>> with channel_bar(desc="level 0", total=1, disable=True) as bar:
+        ...     writing_channel(bar, "dapi")
+        ...     bar.update(1)
+    """
+    pbar: Any = tqdm(
+        total=total,
+        desc=desc,
+        unit=unit,
+        leave=leave,
+        position=position,
+        disable=disable,
+    )
+    try:
+        yield pbar
+    finally:
+        pbar.close()
+
+
+def writing_channel(pbar: Any, name: str) -> None:  # noqa: ANN401
+    """Name the channel a level bar is currently writing."""
+    bar_note(pbar, f"Writing channel {name}")
+
+
+def bar_note(pbar: Any, note: str) -> None:  # noqa: ANN401
+    """Set a bar's postfix, tolerating a disabled or absent bar."""
+    if pbar is not None and not pbar.disable:
+        pbar.set_postfix_str(note, refresh=True)
