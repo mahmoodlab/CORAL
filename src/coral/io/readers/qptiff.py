@@ -471,7 +471,7 @@ def extract_qptiff_channel_names(path: str | Path) -> list[str | None]:
         ReaderError: If the file cannot be read.
 
     Example:
-        >>> extract_qptiff_channel_names("TMA_1.qptiff")[:3]
+        >>> extract_qptiff_channel_names("scan.qptiff")[:3]  # doctest: +SKIP
         ['DAPI', 'CD20', 'Pax5']
     """
     channels, _, _ = read_qptiff_metadata(path)
