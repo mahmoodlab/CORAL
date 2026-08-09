@@ -24,6 +24,7 @@ from typing import Any
 import numpy as np
 import zarr
 
+from coral.dtypes import validate_image_dtype
 from coral.io.harmonize import CanonicalChannel, harmonize_to_canonical
 from coral.io.readers import (
     extract_channel_names,
@@ -1076,10 +1077,12 @@ def convert_to_canonical(
         An open ``CoralSlide`` handle to the written canonical store.
 
     Raises:
-        ValueError: If microns-per-pixel cannot be resolved; if
-            ``channel_names`` length differs from the channel count; if
-            ``nuclear_marker`` names no channel; or if no nuclear channel
-            can be identified.
+        ValueError: If the source dtype is one CORAL cannot scale, or a
+            float source is not normalised to ``[0, 1]`` (see
+            :func:`coral.dtypes.validate_image_dtype`); if
+            microns-per-pixel cannot be resolved; if ``channel_names``
+            length differs from the channel count; if ``nuclear_marker``
+            names no channel; or if no nuclear channel can be identified.
 
     Example:
         Ingesting one slide writes ``case1.zarr`` under the output
@@ -1108,6 +1111,11 @@ def convert_to_canonical(
     if channel_names is not None:
         _apply_channel_names(channels, channel_names)
     markers = _apply_resolution(channels, resolution)
+    # Gate the pixels before anything is written, so an image CORAL
+    # cannot scale fails cleanly instead of leaving a partial store that
+    # mis-scales silently at extract time (same reason the nuclear
+    # channel is resolved before the write in _write_canonical_zarr).
+    validate_image_dtype(image, path.name, markers)
     resolved_mpp = _resolve_mpp(
         path.name, source_mpp, mpp_map=mpp_map, mpp_global=mpp
     )

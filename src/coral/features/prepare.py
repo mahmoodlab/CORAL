@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from coral.features.mean_marker import _scaling_factor
+from coral.dtypes import scaling_factor
 from coral.markers.additional import (
     SlideStat,
     markers_needing_stats,
@@ -81,7 +81,7 @@ def _slide_partials(
     """
     mask = slide._tissue_mask_np()  # raises if tissue not detected
     image = slide.image.isel(c=idxs)
-    expected = region_key(mask, _scaling_factor(np.dtype(image.dtype)))
+    expected = region_key(mask, scaling_factor(np.dtype(image.dtype)))
     stored = slide.read_novel_marker_stats()
     if stored is not None:
         s_stats, s_key = stored

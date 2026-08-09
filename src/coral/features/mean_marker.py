@@ -8,14 +8,11 @@ is, per marker::
          = raw_mean_nonzero / scaling_factor      # eps = 1e-6
 
 The patch is first normalised by the image's dtype ``scaling_factor``
-(``uint8 -> 255``, ``uint16 -> 65535``, ``float -> 400`` — the KRONOS
-``ImagePatcher._get_scaling_factor`` logic), then averaged over its
-**non-zero** pixels (NOT the box area). One formula serves grid + cell:
+(``uint8 -> 255``, ``uint16 -> 65535``, float ``-> 1``, already
+normalised — see :mod:`coral.dtypes`), then averaged over its **non-zero**
+pixels (NOT the box area). One formula serves grid + cell:
 the grid-vs-cell difference is purely the patch handed in (raw box vs
-neighbour/background-masked), per ``CoralSlide.encode_features``. The
-``scaling_factor`` is taken from the patch dtype, so a stored uint16
-slide yields ``/65535`` — tying out to the gold-standard features
-exactly (verified on CRC to float precision).
+neighbour/background-masked), per ``CoralSlide.encode_features``.
 """
 
 from __future__ import annotations
@@ -24,36 +21,11 @@ from typing import Any, ClassVar
 
 import numpy as np
 
+from coral.dtypes import scaling_factor
 from coral.features import register
 from coral.features.base import CoralEncoder
 
 _EPS = 1e-6
-# Domain-specific factor for float images (KRONOS _get_scaling_factor).
-_FLOAT_SCALE = 400.0
-
-
-def _scaling_factor(dtype: np.dtype) -> float:
-    """Image-normalisation divisor by dtype (KRONOS ``_get_scaling_factor``).
-
-    ``uint8 -> 255``; any wider unsigned int (uint16, big-endian ``>u2``)
-    ``-> 65535``; float ``-> 400``.
-
-    Example:
-        >>> import numpy as np
-        >>> (
-        ...     _scaling_factor(np.dtype("uint16")),
-        ...     _scaling_factor(np.dtype("uint8")),
-        ... )
-        (65535.0, 255.0)
-    """
-    if dtype == np.uint8:
-        return 255.0
-    if np.issubdtype(dtype, np.unsignedinteger):  # uint16 / >u2
-        return 65535.0
-    if np.issubdtype(dtype, np.floating):
-        return _FLOAT_SCALE
-    msg = f"no scaling_factor for dtype {dtype!r}"
-    raise ValueError(msg)
 
 
 @register("mean_marker")
@@ -116,7 +88,7 @@ class MeanMarkerExtractor(CoralEncoder):
             1.0
         """
         arr = np.asarray(patches)
-        return arr.astype(np.float64) / _scaling_factor(arr.dtype)
+        return arr.astype(np.float64) / scaling_factor(arr.dtype)
 
     def forward(
         self,

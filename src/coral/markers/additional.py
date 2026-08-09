@@ -94,7 +94,7 @@ def region_key(mask: np.ndarray, scaling: float) -> str:
 
     Args:
         mask: Boolean tissue mask, ``(y, x)``.
-        scaling: The dtype divisor (``mean_marker._scaling_factor``).
+        scaling: The dtype divisor (``coral.dtypes.scaling_factor``).
 
     Returns:
         A short ``"{shape}:{n_tissue}:{scaling}"`` signature.

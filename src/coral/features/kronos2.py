@@ -34,9 +34,9 @@ from typing import Any, ClassVar
 
 import numpy as np
 
+from coral.dtypes import scaling_factor
 from coral.features import register
 from coral.features.base import CoralEncoder
-from coral.features.mean_marker import _scaling_factor
 from coral.markers.additional import SlideStat, region_key
 from coral.utils import resolve_device
 
@@ -201,7 +201,7 @@ class Kronos2Extractor(CoralEncoder):
         The prepare-pass call: for each :meth:`configure_stats`
         target present in ``markers``, take that channel's tissue-masked
         pixels, scale to ``[0, 1]`` by the dtype divisor (the same
-        ``_scaling_factor`` the patcher uses), and store the sample stats
+        ``scaling_factor`` the patcher uses), and store the sample stats
         (``ddof=1``) in :attr:`last_slide_stats` keyed by marker, plus the
         :attr:`last_region_key` reuse signature.
 
@@ -226,7 +226,7 @@ class Kronos2Extractor(CoralEncoder):
         if tissue_mask is None or not self._stat_targets or markers is None:
             return None
         mask = np.asarray(tissue_mask, dtype=bool)
-        scaling = _scaling_factor(np.dtype(image.dtype))
+        scaling = scaling_factor(np.dtype(image.dtype))
         name_to_idx = {m: i for i, m in enumerate(markers)}
         stats: dict[str, SlideStat] = {}
         for target in self._stat_targets:

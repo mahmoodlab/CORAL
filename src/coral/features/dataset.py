@@ -24,7 +24,7 @@ from typing import Any
 import numpy as np
 import zarr
 
-from coral.features.mean_marker import _scaling_factor
+from coral.dtypes import scaling_factor
 
 
 class CoralDataset:
@@ -37,7 +37,7 @@ class CoralDataset:
         patch_size: Patch side in level-0 pixels.
         idxs: Channel indices to select (the marker subset), in order.
         scale: When ``True`` (default), divide by the data-driven
-            ``_scaling_factor(dtype)`` → ``float32 [0, 1]``; when ``False``,
+            ``scaling_factor(dtype)`` → ``float32 [0, 1]``; when ``False``,
             return the raw box (mean_marker scales in its own float64
             reduction).
         cell_ids: Optional ``(n,)`` cell ids; when given, each box is
@@ -96,7 +96,7 @@ class CoralDataset:
             )
             box = box * footprint[None]
         if self._scale:
-            box = box.astype(np.float32) / _scaling_factor(box.dtype)
+            box = box.astype(np.float32) / scaling_factor(box.dtype)
         return box, self._coords[index]
 
     def _read_box(
