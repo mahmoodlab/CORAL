@@ -231,7 +231,7 @@ CORAL supports several patch encoders that are in-domain or out-domain vision fo
 
 CORAL can be used for benchmarking patch encoders.
 
-| Patch Encoder      | cHL [[link]](https://www.nature.com/articles/s41467-023-44188-w) | DLBCL-1   |   DLBCL-2     |   HNSCC [[link]](https://www.cell.com/cancer-cell/fulltext/S1535-6108(26)00042-5) | HNSCC [[link]](https://www.cell.com/cancer-cell/fulltext/S1535-6108(26)00042-5) |
+| Patch Encoder      | cHL [[link]](https://www.nature.com/articles/s41467-023-44188-w) | DLBCL-1 [[link]](https://aacrjournals.org/cancerdiscovery/article/16/8/1611/787130/Same-Slide-Spatial-Multiomics-Integration-with-IN)   |   DLBCL-2 [[link]](https://aacrjournals.org/cancerdiscovery/article/16/8/1611/787130/Same-Slide-Spatial-Multiomics-Integration-with-IN)     |   HNSCC [[link]](https://www.cell.com/cancer-cell/fulltext/S1535-6108(26)00042-5) | HNSCC [[link]](https://www.cell.com/cancer-cell/fulltext/S1535-6108(26)00042-5) |
 |:---------------|---------------------------:|-------------------------:|-----------------:|-----------------:|------------------:|
 | *Task* | cell (C=16) | cell (C=9) | cell (C=9) | survival (n=80) | survival (n=80) |
 |*Num. markers*| 18 | 12 | 12 | 57| 57 |
